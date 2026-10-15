@@ -1,0 +1,240 @@
+/* ============================================================
+   DotaZ — каркас: шапка, навигация, подвал (Task 2)
+   ============================================================ */
+
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  background: rgba(8, 13, 20, 0.82);
+  border-bottom: 1px solid var(--border-subtle);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+.site-header__inner {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-height: var(--header-h);
+}
+
+/* ---------- Бренд ---------- */
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  flex-shrink: 0;
+}
+
+.brand__mark svg {
+  display: block;
+}
+
+.brand__accent {
+  color: var(--accent-primary);
+}
+
+/* ---------- Панель шапки (навигация + действия) ---------- */
+
+.site-header__panel {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  flex: 1;
+  min-width: 0;
+}
+
+.main-nav {
+  margin-left: 8px;
+}
+
+.main-nav__list {
+  display: flex;
+  align-items: center;
+  gap: 26px;
+}
+
+.main-nav__link {
+  position: relative;
+  display: inline-block;
+  padding: 6px 2px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #dbe3ef;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.main-nav__link:hover {
+  color: var(--accent-hover);
+}
+
+.main-nav__link.active {
+  color: var(--accent-primary);
+  font-weight: 600;
+}
+
+.main-nav__link.active::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -8px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--accent-primary);
+}
+
+.main-nav__link--disabled {
+  color: rgba(219, 227, 239, 0.42);
+  cursor: default;
+}
+
+.main-nav__link--disabled:hover {
+  color: rgba(219, 227, 239, 0.42);
+}
+
+/* ---------- Правая часть шапки ---------- */
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+}
+
+.lang-select {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 9px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: not-allowed;
+}
+
+/* ---------- Кнопка мобильного меню ---------- */
+
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin-left: auto;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+/* ---------- Подвал ---------- */
+
+.app-main {
+  display: block;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+}
+
+.site-footer__inner {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 26px;
+  padding-bottom: 26px;
+}
+
+.site-footer__brand {
+  font-size: 17px;
+  font-weight: 800;
+}
+
+.site-footer__note {
+  max-width: 640px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+/* ---------- Адаптивность шапки ---------- */
+
+@media (max-width: 1020px) {
+  .main-nav__list {
+    gap: 18px;
+  }
+
+  .site-header__inner {
+    gap: 18px;
+  }
+}
+
+@media (max-width: 860px) {
+  .nav-toggle {
+    display: inline-flex;
+  }
+
+  .site-header__panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 18px;
+    padding: 18px 24px 22px;
+    background: rgba(13, 20, 29, 0.98);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+
+  .site-header__panel.is-open {
+    display: flex;
+  }
+
+  .main-nav {
+    margin-left: 0;
+  }
+
+  .main-nav__list {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 4px;
+  }
+
+  .main-nav__link {
+    display: block;
+    padding: 12px 8px;
+    min-height: 44px;
+    font-size: 16px;
+  }
+
+  .main-nav__link.active::after {
+    bottom: 6px;
+    left: 8px;
+    right: auto;
+    width: 28px;
+  }
+
+  .header-actions {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+
+  .header-actions .btn {
+    flex: 1;
+    min-width: 140px;
+  }
+}

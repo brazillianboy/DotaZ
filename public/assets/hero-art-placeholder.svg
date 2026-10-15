@@ -1,0 +1,82 @@
+<!--
+  DotaZ — арт-плейсхолдер hero-секции (Task 2).
+  Оригинальная абстрактная композиция: тёмные скалы/шпили, красное свечение и угольки.
+  НЕ является изображением из Dota 2 и не содержит защищённых авторским правом ассетов.
+  Заменяется на согласованный арт-ассет, когда такой будет предоставлен владельцем проекта.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" aria-hidden="true" focusable="false">
+  <defs>
+    <radialGradient id="glow" cx="55%" cy="42%" r="55%">
+      <stop offset="0%" stop-color="#ef3038" stop-opacity="0.55" />
+      <stop offset="45%" stop-color="#8f1d24" stop-opacity="0.28" />
+      <stop offset="100%" stop-color="#080d14" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="spire" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#1c2836" />
+      <stop offset="100%" stop-color="#0b121b" />
+    </linearGradient>
+    <linearGradient id="spireRed" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a1a20" />
+      <stop offset="100%" stop-color="#16111c" />
+    </linearGradient>
+    <linearGradient id="banner" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ef3038" stop-opacity="0.75" />
+      <stop offset="100%" stop-color="#7c1219" stop-opacity="0.5" />
+    </linearGradient>
+    <filter id="soft" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="12" />
+    </filter>
+    <filter id="soft2" x="-60%" y="-60%" width="220%" height="220%">
+      <feGaussianBlur stdDeviation="3" />
+    </filter>
+  </defs>
+
+  <!-- атмосферное свечение -->
+  <ellipse cx="500" cy="380" rx="380" ry="330" fill="url(#glow)" />
+
+  <!-- дальние шпили -->
+  <g opacity="0.55">
+    <polygon points="120,760 175,300 230,760" fill="url(#spire)" />
+    <polygon points="240,760 300,220 360,760" fill="url(#spireRed)" />
+    <polygon points="660,760 715,260 770,760" fill="url(#spire)" />
+    <polygon points="770,760 820,340 870,760" fill="url(#spireRed)" />
+  </g>
+
+  <!-- центральная абстрактная фигура-силуэт (шпили-броня) -->
+  <g>
+    <polygon points="380,780 455,180 520,320 560,200 640,780" fill="url(#spireRed)" opacity="0.9" />
+    <polygon points="430,780 500,300 545,410 585,330 630,780" fill="#121a26" opacity="0.9" />
+    <polygon points="498,200 522,150 548,215 522,255" fill="#ef3038" opacity="0.85" filter="url(#soft2)" />
+  </g>
+
+  <!-- красные знамёна-полосы -->
+  <g opacity="0.6">
+    <rect x="300" y="250" width="26" height="330" rx="6" fill="url(#banner)" transform="rotate(-6 313 415)" />
+    <rect x="620" y="230" width="22" height="300" rx="6" fill="url(#banner)" transform="rotate(5 631 380)" />
+  </g>
+
+  <!-- светящиеся трещины -->
+  <g stroke="#ef3038" stroke-linecap="round" opacity="0.7" filter="url(#soft2)">
+    <path d="M470 620 L505 560 L490 520 L535 470" stroke-width="4" fill="none" />
+    <path d="M560 640 L585 590 L572 555" stroke-width="3" fill="none" />
+    <path d="M330 600 L352 560 L340 530" stroke-width="3" fill="none" />
+  </g>
+
+  <!-- угольки -->
+  <g fill="#ff6b52">
+    <circle cx="420" cy="330" r="4" opacity="0.9" />
+    <circle cx="560" cy="280" r="3" opacity="0.8" />
+    <circle cx="640" cy="420" r="5" opacity="0.7" />
+    <circle cx="330" cy="450" r="3.5" opacity="0.8" />
+    <circle cx="700" cy="330" r="3" opacity="0.6" />
+    <circle cx="250" cy="380" r="4" opacity="0.6" />
+    <circle cx="600" cy="520" r="3" opacity="0.75" />
+    <circle cx="480" cy="430" r="2.5" opacity="0.85" />
+    <circle cx="380" cy="270" r="2.5" opacity="0.7" />
+    <circle cx="750" cy="500" r="4" opacity="0.5" />
+    <circle cx="200" cy="520" r="3" opacity="0.5" />
+  </g>
+
+  <!-- тёмный низ для плавного перехода в фон страницы -->
+  <rect x="0" y="720" width="900" height="180" fill="#080d14" opacity="0.85" />
+</svg>

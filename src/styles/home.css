@@ -1,0 +1,729 @@
+/* ============================================================
+   DotaZ — главная страница: hero, форма, карточка матча (Task 2)
+   ============================================================ */
+
+.home {
+  overflow-x: hidden;
+}
+
+/* ---------- Hero ---------- */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(60% 80% at 72% 35%, rgba(239, 48, 56, 0.18), transparent 62%),
+    radial-gradient(70% 90% at 28% 0%, rgba(64, 96, 138, 0.22), transparent 70%),
+    linear-gradient(180deg, #0a1220 0%, var(--bg-primary) 100%);
+}
+
+/* Арт-плейсхолдер (см. public/assets/hero-art-placeholder.svg). */
+.hero__art {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 58%;
+  background: url('/assets/hero-art-placeholder.svg') no-repeat right center;
+  background-size: cover;
+}
+
+.hero__veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    #080d14 0%,
+    rgba(8, 13, 20, 0.92) 30%,
+    rgba(8, 13, 20, 0.35) 62%,
+    rgba(8, 13, 20, 0.55) 100%
+  );
+}
+
+.hero__inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 48px;
+  padding-top: 72px;
+  padding-bottom: 64px;
+}
+
+.hero__content {
+  max-width: 620px;
+}
+
+.hero__title {
+  font-size: clamp(32px, 4.2vw, 52px);
+  font-weight: 800;
+  line-height: 1.14;
+  letter-spacing: -0.8px;
+}
+
+.hero__lead {
+  margin-top: 20px;
+  max-width: 520px;
+  font-size: 17.5px;
+  line-height: 1.65;
+  color: var(--text-secondary);
+}
+
+.hero__aside {
+  flex-shrink: 0;
+  width: 330px;
+  padding-top: 28px;
+}
+
+/* ---------- Форма ввода ID матча (визуальное превью, отключена) ---------- */
+
+.match-form {
+  margin-top: 32px;
+  max-width: 640px;
+}
+
+.match-form__fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.match-form__row {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.match-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 260px;
+  height: 56px;
+  padding: 0 16px;
+  background: #eef2f8;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.28);
+}
+
+.match-input__icon {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.match-input__field {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #101923;
+  font-size: 15px;
+  outline: none;
+  cursor: not-allowed;
+}
+
+.match-input__field::placeholder {
+  color: #64748b;
+  opacity: 1;
+}
+
+/* Отключённое поле сохраняет «светлый» вид из референса. */
+.match-input__field:disabled {
+  opacity: 1;
+  -webkit-text-fill-color: #101923;
+}
+
+.match-input__field:disabled::placeholder {
+  -webkit-text-fill-color: #64748b;
+}
+
+.match-form__submit {
+  flex-shrink: 0;
+}
+
+.match-form__submit:disabled {
+  background: var(--accent-primary);
+  opacity: 0.88;
+  filter: saturate(0.85);
+  cursor: not-allowed;
+}
+
+.match-form__meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 14px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.match-form__help {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.match-form__example .accent {
+  font-weight: 700;
+}
+
+.match-form__notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin-top: 16px;
+  max-width: 560px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #93a2b8;
+}
+
+.match-form__notice .badge {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+/* ---------- Карточка-превью матча (дизайн-превью) ---------- */
+
+.preview-card {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  width: 100%;
+  padding: 18px;
+  background: rgba(15, 22, 32, 0.85);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.preview-card__badge {
+  align-self: flex-start;
+}
+
+.preview-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.preview-card__hero {
+  flex-shrink: 0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.preview-card__id {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.preview-card__name {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.preview-card__stats {
+  display: flex;
+  gap: 22px;
+}
+
+.preview-card__stats dt {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #8b9ab1;
+}
+
+.preview-card__stats dd {
+  margin-top: 2px;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.preview-card__charts {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.chart-line {
+  flex: 1;
+  height: 48px;
+}
+
+.chart-bars {
+  width: 60px;
+  height: 48px;
+}
+
+.preview-card__link {
+  padding-top: 12px;
+  border-top: 1px solid var(--border-subtle);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  transition: color 0.15s ease;
+}
+
+.preview-card__link:hover {
+  color: var(--accent-hover);
+}
+
+.preview-card__note {
+  font-size: 11.5px;
+  color: #7e8ca3;
+}
+
+/* ---------- Ряд возможностей ---------- */
+
+.features {
+  padding: 20px 0 40px;
+  background: var(--bg-primary);
+}
+
+.features__list {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  margin-top: 18px;
+  border-top: 1px solid var(--border-subtle);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.feature {
+  display: flex;
+  gap: 12px;
+  padding: 22px 18px;
+  border-left: 1px solid var(--border-subtle);
+}
+
+.feature:first-child {
+  border-left: 0;
+}
+
+.feature__icon {
+  flex-shrink: 0;
+  color: var(--accent-primary);
+}
+
+.feature__title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.feature__text {
+  margin-top: 5px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+}
+
+/* ---------- Как это работает? ---------- */
+
+.steps {
+  padding: 28px 0 48px;
+}
+
+.steps__list {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
+  gap: 14px;
+  align-items: stretch;
+  margin-top: 28px;
+}
+
+.steps__arrow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #56677f;
+  font-size: 22px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 22px;
+  min-height: 218px;
+  background: rgba(18, 28, 39, 0.8);
+}
+
+.step__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.step__num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.step__title {
+  font-size: 16.5px;
+  font-weight: 700;
+}
+
+.step__text {
+  flex: 1;
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+}
+
+/* ---------- Мини-макеты внутри шагов (декоративные) ---------- */
+
+.mock {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.mock--input {
+  justify-content: flex-start;
+}
+
+.mock__mark {
+  display: inline-flex;
+  flex-shrink: 0;
+}
+
+.mock__value {
+  font-size: 14px;
+  color: #c9d4e4;
+  letter-spacing: 0.4px;
+}
+
+.mock__search {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: rgba(239, 48, 56, 0.12);
+}
+
+.mock__bar {
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.mock__bar-fill {
+  display: block;
+  width: 62%;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent-primary);
+}
+
+.mock__avatar {
+  flex-shrink: 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.mock__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+}
+
+.mock__line {
+  display: block;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.mock__line--mid {
+  width: 78%;
+}
+
+.mock__line--short {
+  width: 55%;
+}
+
+.mock__alert {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--accent-primary);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.mock--growth {
+  justify-content: center;
+}
+
+/* ---------- Нижние карточки-разделы ---------- */
+
+.guide {
+  padding: 8px 0 72px;
+}
+
+.guide__list {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+.guide-card {
+  position: relative;
+  min-height: 232px;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-panel);
+}
+
+/* Атмосферные CSS-фоны вместо игрового арта (плейсхолдеры задокументированы). */
+.guide-card--blue {
+  background:
+    radial-gradient(90% 90% at 85% 10%, rgba(96, 165, 220, 0.35), transparent 60%),
+    radial-gradient(120% 120% at 15% 0%, rgba(46, 96, 150, 0.5), transparent 70%),
+    linear-gradient(165deg, #1c3350 0%, #0d1a2b 65%);
+}
+
+.guide-card--red {
+  background:
+    radial-gradient(100% 90% at 80% 15%, rgba(255, 120, 60, 0.4), transparent 62%),
+    linear-gradient(165deg, #3a1210 0%, #160c12 70%);
+}
+
+.guide-card--crimson {
+  background:
+    radial-gradient(100% 90% at 25% 10%, rgba(239, 48, 56, 0.38), transparent 60%),
+    linear-gradient(165deg, #2c0f16 0%, #120b12 70%);
+}
+
+.guide-card--green {
+  background:
+    radial-gradient(100% 90% at 80% 15%, rgba(72, 190, 150, 0.35), transparent 62%),
+    linear-gradient(165deg, #11241f 0%, #0b1416 70%);
+}
+
+.guide-card__link,
+.guide-card__static {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  width: 100%;
+  min-height: 232px;
+  padding: 20px;
+  background: linear-gradient(180deg, rgba(8, 13, 20, 0) 32%, rgba(8, 13, 20, 0.88) 100%);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.guide-card__link:hover {
+  box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.guide-card__title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 19px;
+  font-weight: 800;
+}
+
+.guide-card__text {
+  font-size: 14px;
+  line-height: 1.55;
+  color: #c6d0de;
+  max-width: 250px;
+}
+
+.guide-card__note {
+  font-size: 12px;
+  color: #93a2b8;
+}
+
+.guide-card__arrow {
+  position: absolute;
+  right: 18px;
+  bottom: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  border-radius: 50%;
+  color: var(--text-primary);
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* ---------- Адаптивность главной страницы ---------- */
+
+@media (max-width: 1180px) {
+  .features__list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .feature:nth-child(3n + 1) {
+    border-left: 0;
+  }
+
+  .feature:nth-child(n + 4) {
+    border-top: 1px solid var(--border-subtle);
+  }
+}
+
+@media (max-width: 1100px) {
+  .steps__list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .steps__arrow {
+    display: none;
+  }
+
+  .guide__list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1020px) {
+  .hero__inner {
+    gap: 32px;
+  }
+
+  .hero__aside {
+    width: 296px;
+  }
+}
+
+@media (max-width: 880px) {
+  .hero__art {
+    width: 74%;
+    opacity: 0.55;
+  }
+
+  .hero__veil {
+    background: linear-gradient(
+      180deg,
+      rgba(8, 13, 20, 0.55) 0%,
+      rgba(8, 13, 20, 0.9) 45%,
+      #080d14 100%
+    );
+  }
+
+  .hero__inner {
+    flex-direction: column;
+    padding-top: 48px;
+    padding-bottom: 48px;
+  }
+
+  .hero__content {
+    max-width: 100%;
+  }
+
+  .hero__aside {
+    width: 100%;
+    max-width: 360px;
+    padding-top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .features__list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .feature {
+    border-left: 0;
+    border-top: 1px solid var(--border-subtle);
+    padding: 16px 8px;
+  }
+
+  .feature:nth-child(-n + 2) {
+    border-top: 0;
+  }
+
+  .steps__list {
+    grid-template-columns: 1fr;
+  }
+
+  .step {
+    min-height: 0;
+  }
+
+  .guide__list {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero__title {
+    font-size: 30px;
+  }
+
+  .hero__lead {
+    font-size: 15.5px;
+  }
+
+  .match-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .match-form__submit {
+    width: 100%;
+  }
+
+  .match-form__meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .features__list {
+    grid-template-columns: 1fr;
+  }
+
+  .feature {
+    border-top: 1px solid var(--border-subtle);
+  }
+
+  .feature:first-child {
+    border-top: 0;
+  }
+}
