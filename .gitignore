@@ -15,3 +15,9 @@ service-account*.json
 # Логи, способные содержать секреты (PLAN.md, правило 6)
 *.log
 logs/
+
+# Зависимости и артефакты сборки фронтенда (Task 2)
+node_modules/
+dist/
+dist-ssr/
+.vite/

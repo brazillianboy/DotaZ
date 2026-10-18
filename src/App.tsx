@@ -1,6 +1,8 @@
 import { Route, Routes } from 'react-router-dom'
 
 import AppLayout from './components/AppLayout'
+import ProtectedRoute from './components/ProtectedRoute'
+import AuthConfirmPage from './pages/AuthConfirmPage'
 import HistoryPage from './pages/HistoryPage'
 import HeroesPage from './pages/HeroesPage'
 import HomePage from './pages/HomePage'
@@ -10,10 +12,11 @@ import NotFoundPage from './pages/NotFoundPage'
 import RegisterPage from './pages/RegisterPage'
 
 /**
- * Маршрутизация приложения (Task 2).
- * Поддерживаемые маршруты: `/`, `/login`, `/register`, `/heroes`,
- * `/matches/:matchId`, `/history`. Неизвестные адреса — страница 404.
- * Логика анализа, авторизации и данных (Tasks 3–5) здесь намеренно отсутствует.
+ * Маршрутизация приложения (Tasks 2–4).
+ * Публичные маршруты: `/`, `/login`, `/register`, `/auth/confirm`, `/heroes`,
+ * `/matches/:matchId`. Приватный маршрут: `/history` — только после
+ * подтверждения сессии (Task 4). Неизвестные адреса — страница 404.
+ * Логика анализа и данных (Tasks 5+) здесь намеренно отсутствует.
  */
 export default function App() {
   return (
@@ -22,9 +25,17 @@ export default function App() {
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
+        <Route path="auth/confirm" element={<AuthConfirmPage />} />
         <Route path="heroes" element={<HeroesPage />} />
         <Route path="matches/:matchId" element={<MatchPage />} />
-        <Route path="history" element={<HistoryPage />} />
+        <Route
+          path="history"
+          element={
+            <ProtectedRoute>
+              <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

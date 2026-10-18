@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Link, NavLink, useLocation } from 'react-router-dom'
+import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom'
+
+import { useAuth } from '../hooks/useAuth'
 
 /**
  * Глобальная шапка сайта (Task 2).
@@ -9,7 +11,28 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
  */
 export default function AppHeader() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+  const [logoutError, setLogoutError] = useState<string | null>(null)
   const location = useLocation()
+  const navigate = useNavigate()
+  const { user, loading, signOut } = useAuth()
+
+  async function handleSignOut() {
+    if (loggingOut) {
+      return
+    }
+    setLoggingOut(true)
+    setLogoutError(null)
+    const result = await signOut()
+    setLoggingOut(false)
+    if (result.ok) {
+      if (location.pathname !== '/') {
+        navigate('/', { replace: true })
+      }
+      return
+    }
+    setLogoutError(result.error ?? 'Не удалось выйти. Повторите попытку.')
+  }
 
   useEffect(() => {
     setMenuOpen(false)
@@ -115,12 +138,53 @@ export default function AppHeader() {
                 <path d="M6 9l6 6 6-6" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" />
               </svg>
             </button>
-            <Link className="btn btn--ghost" to="/login">
-              Войти
-            </Link>
-            <Link className="btn btn--primary" to="/register">
-              Зарегистрироваться
-            </Link>
+            {loading && (
+              <span className="header-actions__status" role="status" aria-live="polite">
+                Проверка…
+              </span>
+            )}
+
+            {!loading && !user && (
+              <>
+                <Link className="btn btn--ghost" to="/login">
+                  Войти
+                </Link>
+                <Link className="btn btn--primary" to="/register">
+                  Зарегистрироваться
+                </Link>
+              </>
+            )}
+
+            {!loading && user && (
+              <>
+                <span className="account-chip" title={user.email}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                    <circle cx="12" cy="8.5" r="3.6" stroke="currentColor" strokeWidth="1.6" fill="none" />
+                    <path
+                      d="M4.8 19.5c1-3.6 3.8-5.5 7.2-5.5s6.2 1.9 7.2 5.5"
+                      stroke="currentColor"
+                      strokeWidth="1.6"
+                      fill="none"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <span className="account-chip__email">{user.email}</span>
+                </span>
+                {logoutError && (
+                  <span className="header-actions__error" role="alert">
+                    {logoutError}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="btn btn--ghost"
+                  onClick={handleSignOut}
+                  disabled={loggingOut}
+                >
+                  {loggingOut ? 'Выходим…' : 'Выйти'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
