@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import MatchSummary from '../components/MatchSummary'
+import PlayerSelector from '../components/PlayerSelector'
+import PlayerStats from '../components/PlayerStats'
+import { findPlayerBySlot, pickDefaultPlayerSlot } from '../lib/matchView'
 import { normalizeMatch } from '../lib/normalizeMatch'
 import {
   fetchMatchById,
@@ -16,36 +20,32 @@ type MatchState =
   | { status: 'success'; match: NormalizedMatch; requestedId: string }
   | { status: 'error'; error: OpenDotaError }
 
-/** Длительность в секундах → «MM:SS» (простое представление поля ответа, без расчётов). */
-function formatDuration(seconds: number): string {
-  const total = Math.floor(seconds)
-  const minutes = Math.floor(total / 60)
-  const rest = total % 60
-  return `${minutes}:${String(rest).padStart(2, '0')}`
-}
-
 /**
- * Страница матча (Task 5): получает матч из OpenDota по параметру маршрута.
+ * Страница матча (Tasks 5–7): получает матч из OpenDota по параметру маршрута,
+ * нормализует ответ (Task 6) и показывает сводку матча с выбором участника (Task 7).
  *
  * Поддерживаются прямой переход по URL, обновление страницы и навигация.
- * Параметр маршрута валидируется здесь независимо от главной страницы.
- * Полная нормализация данных и статистика — Task 6+; здесь показывается только
- * подтверждение получения данных и поля, фактически присутствующие в ответе.
+ * Выбор игрока хранится в локальном состоянии и не вызывает новых запросов.
  */
 export default function MatchPage() {
   const { matchId } = useParams<{ matchId: string }>()
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<MatchState>({ status: 'loading' })
+  // Устойчивый идентификатор выбранного участника — player_slot.
+  const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
 
   useEffect(() => {
     const validation = validateMatchId(matchId ?? '')
     if (!validation.ok) {
       setState({ status: 'invalid', message: validation.message })
+      setSelectedSlot(null)
       return
     }
 
     const controller = new AbortController()
+    // Смена матча: прежние данные и выбранный игрок не показываются.
     setState({ status: 'loading' })
+    setSelectedSlot(null)
 
     fetchMatchById(validation.value, controller.signal).then((result) => {
       // Устаревшие и отменённые ответы не применяем.
@@ -54,11 +54,14 @@ export default function MatchPage() {
       }
       if (result.ok) {
         // Нормализация выполняется сразу после успешного получения данных (Task 6).
+        const match = normalizeMatch(result.match)
         setState({
           status: 'success',
-          match: normalizeMatch(result.match),
+          match,
           requestedId: validation.value,
         })
+        // По умолчанию выбирается первый доступный участник нового матча.
+        setSelectedSlot(pickDefaultPlayerSlot(match.players))
         return
       }
       if (result.error.kind === 'aborted') {
@@ -75,10 +78,29 @@ export default function MatchPage() {
     setAttempt((value) => value + 1)
   }, [])
 
+  const selectedPlayer =
+    state.status === 'success' ? findPlayerBySlot(state.match.players, selectedSlot) : null
+
   return (
     <section className="stub" aria-busy={state.status === 'loading'}>
       <div className="container">
-        <div className="stub__panel panel">
+        {state.status === 'success' ? (
+          <div className="match-details">
+            <MatchSummary match={state.match} requestedId={state.requestedId} />
+            <div className="match-details__columns">
+              <PlayerSelector
+                players={state.match.players}
+                selectedSlot={selectedSlot}
+                onSelect={setSelectedSlot}
+              />
+              <PlayerStats player={selectedPlayer} />
+            </div>
+            <Link className="btn btn--ghost" to="/">
+              ← Вернуться на главную
+            </Link>
+          </div>
+        ) : (
+          <div className="stub__panel panel">
           {state.status === 'loading' && (
             <>
               <span className="badge badge--warn">Загрузка</span>
@@ -138,73 +160,8 @@ export default function MatchPage() {
               </div>
             </>
           )}
-
-          {state.status === 'success' && (
-            <>
-              <span className="badge badge--warn">Данные получены</span>
-              <h1 className="stub__title">
-                Матч <span className="accent">{state.requestedId}</span>
-              </h1>
-              <p className="stub__text">
-                OpenDota вернула данные матча. Ниже — только поля, фактически
-                присутствующие в ответе. Подробная статистика игроков, разбор линии
-                и наблюдения появятся в следующих задачах.
-              </p>
-              <ul className="stub__list">
-                <li>
-                  Запрошенный ID матча: <strong>{state.requestedId}</strong>
-                </li>
-                <li>
-                  ID матча в ответе OpenDota:{' '}
-                  {state.match.match_id !== null ? (
-                    <strong>{state.match.match_id}</strong>
-                  ) : (
-                    'нет данных в ответе'
-                  )}
-                </li>
-                <li>
-                  Длительность:{' '}
-                  {typeof state.match.duration === 'number' ? (
-                    <>
-                      <strong>{formatDuration(state.match.duration)}</strong> (
-                      {state.match.duration} с)
-                    </>
-                  ) : (
-                    'нет данных в ответе'
-                  )}
-                </li>
-                <li>
-                  Победитель:{' '}
-                  {typeof state.match.radiant_win === 'boolean'
-                    ? state.match.radiant_win
-                      ? 'Radiant'
-                      : 'Dire'
-                    : 'нет данных в ответе'}
-                </li>
-                <li>
-                  Участников в ответе:{' '}
-                  {state.match.players.length > 0
-                    ? state.match.players.length
-                    : 'нет данных в ответе'}
-                </li>
-                <li>
-                  Стороны по player_slot: Radiant —{' '}
-                  {state.match.players.filter((player) => player.team === 'radiant').length},
-                  Dire —{' '}
-                  {state.match.players.filter((player) => player.team === 'dire').length}
-                </li>
-                <li>Источник данных: OpenDota</li>
-              </ul>
-              <p className="stub__hint">
-                Значения приведены как есть из ответа OpenDota; отсутствующие поля не
-                заменяются нулями, количество участников не предполагается равным десяти.
-              </p>
-              <Link className="btn btn--ghost" to="/">
-                ← Вернуться на главную
-              </Link>
-            </>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </section>
   )
