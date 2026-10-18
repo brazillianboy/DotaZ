@@ -205,12 +205,95 @@
 .match-summary,
 .match-players,
 .match-stats,
-.lane-report {
+.lane-report,
+.analysis-panel {
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 24px;
   background: rgba(18, 28, 39, 0.85);
+}
+
+/* ---------- Анализ: наблюдения, рекомендации, ограничения (Task 9) ---------- */
+
+.analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.analysis__version {
+  font-size: 12.5px;
+  letter-spacing: 0.3px;
+  color: #7e8ca3;
+}
+
+.observations {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.observation {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.observation__text {
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.observation__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.observation__evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.observation__evidence li {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 5px 9px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12.5px;
+}
+
+.observation__field {
+  color: var(--text-secondary);
+  font-family: 'Consolas', 'Courier New', monospace;
+}
+
+.observation__value {
+  color: var(--text-primary);
+  font-weight: 700;
+}
+
+.limitations {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-left: 20px;
+  list-style: disc;
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.5;
 }
 
 .lane-report__subject {
@@ -374,7 +457,8 @@
   .match-summary,
   .match-players,
   .match-stats,
-  .lane-report {
+  .lane-report,
+  .analysis-panel {
     padding: 18px;
   }
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import AnalysisReport from '../components/AnalysisReport'
 import MatchSummary from '../components/MatchSummary'
 import LaneReport from '../components/LaneReport'
 import PlayerSelector from '../components/PlayerSelector'
@@ -99,6 +100,7 @@ export default function MatchPage() {
                 <LaneReport player={selectedPlayer} />
               </div>
             </div>
+            <AnalysisReport match={state.match} player={selectedPlayer} />
             <Link className="btn btn--ghost" to="/">
               ← Вернуться на главную
             </Link>
