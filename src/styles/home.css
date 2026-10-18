@@ -152,6 +152,10 @@
   cursor: not-allowed;
 }
 
+.match-form__error {
+  margin-top: 12px;
+}
+
 .match-form__meta {
   display: flex;
   justify-content: space-between;

@@ -1,6 +1,8 @@
-import { Link } from 'react-router-dom'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 
 import MatchPreviewCard from '../components/MatchPreviewCard'
+import { validateMatchId } from '../lib/opendota'
 
 /* Иконки раздела возможностей (inline SVG). */
 function IconBars() {
@@ -77,6 +79,25 @@ const FEATURES = [
 ]
 
 export default function HomePage() {
+  const navigate = useNavigate()
+  const [matchIdValue, setMatchIdValue] = useState('')
+  const [matchIdError, setMatchIdError] = useState<string | null>(null)
+
+  /**
+   * Отправка формы (Task 5): валидация ID и переход на страницу матча,
+   * которая выполняет запрос к OpenDota. Невалидный ID запрос не запускает.
+   */
+  function handleMatchSubmit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    const result = validateMatchId(matchIdValue)
+    if (!result.ok) {
+      setMatchIdError(result.message)
+      return
+    }
+    setMatchIdError(null)
+    navigate(`/matches/${result.value}`)
+  }
+
   return (
     <div className="home">
       {/* ---------- SECTION A: Hero ---------- */}
@@ -100,36 +121,47 @@ export default function HomePage() {
 
             <form
               className="match-form"
-              aria-label="Форма анализа матча — скоро"
-              onSubmit={(event) => event.preventDefault()}
+              aria-label="Форма получения матча"
+              onSubmit={handleMatchSubmit}
+              noValidate
             >
-              <fieldset className="match-form__fieldset" disabled>
-                <legend className="visually-hidden">
-                  Анализ матча пока недоступен — элементы формы отключены
-                </legend>
-                <div className="match-form__row">
-                  <div className="match-input">
-                    <span className="match-input__icon" aria-hidden="true">
-                      <svg viewBox="0 0 24 24" width="18" height="18" focusable="false">
-                        <rect x="3" y="3" width="18" height="18" rx="5" fill="#c2242c" />
-                        <path d="M8 7h8l-4.6 5.6H13L7.5 18l2.2-5.4H7z" fill="#ffffff" />
-                      </svg>
-                    </span>
-                    <input
-                      className="match-input__field"
-                      type="text"
-                      placeholder="Введите ID матча (например, 9007760151)"
-                      aria-label="ID матча"
-                      aria-describedby="match-form-notice"
-                      readOnly
-                    />
-                  </div>
-                  <button type="submit" className="btn btn--primary btn--lg match-form__submit">
-                    Анализировать
-                    <span aria-hidden="true"> →</span>
-                  </button>
+              <div className="match-form__row">
+                <div className="match-input">
+                  <span className="match-input__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="18" height="18" focusable="false">
+                      <rect x="3" y="3" width="18" height="18" rx="5" fill="#c2242c" />
+                      <path d="M8 7h8l-4.6 5.6H13L7.5 18l2.2-5.4H7z" fill="#ffffff" />
+                    </svg>
+                  </span>
+                  <input
+                    className="match-input__field"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="off"
+                    placeholder="Введите ID матча (например, 9007760151)"
+                    aria-label="ID матча"
+                    aria-describedby="match-form-notice"
+                    aria-invalid={matchIdError ? true : undefined}
+                    value={matchIdValue}
+                    onChange={(event) => {
+                      setMatchIdValue(event.target.value)
+                      if (matchIdError) {
+                        setMatchIdError(null)
+                      }
+                    }}
+                  />
                 </div>
-              </fieldset>
+                <button type="submit" className="btn btn--primary btn--lg match-form__submit">
+                  Анализировать
+                  <span aria-hidden="true"> →</span>
+                </button>
+              </div>
+
+              {matchIdError && (
+                <p className="auth-alert auth-alert--error match-form__error" role="alert">
+                  {matchIdError}
+                </p>
+              )}
 
               <div className="match-form__meta">
                 <span className="match-form__help">
@@ -152,9 +184,8 @@ export default function HomePage() {
               </div>
 
               <p className="match-form__notice" id="match-form-notice">
-                <span className="badge badge--warn">Скоро</span>
-                Анализ матчей пока недоступен: форма — визуальное превью, запросы не
-                отправляются. Функция появится в следующих версиях.
+                По ID матча запрашиваются данные у OpenDota. Подробная статистика
+                игроков, разбор линии и наблюдения появятся в следующих задачах.
               </p>
             </form>
           </div>

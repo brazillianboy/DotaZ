@@ -59,6 +59,13 @@
   color: var(--text-primary);
 }
 
+.stub__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
 /* ---------- 404 ---------- */
 
 .notfound__code {
