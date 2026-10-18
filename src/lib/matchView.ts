@@ -119,3 +119,16 @@ export function findPlayerBySlot(
   }
   return players.find((player) => player.player_slot === slot) ?? null
 }
+
+/** Процент эффективности линии OpenDota: значение со знаком «%» или «Нет данных». */
+export function formatLaneEfficiencyPct(value: number | null): string {
+  if (value === null) {
+    return NO_DATA_LABEL
+  }
+  return `${value} %`
+}
+
+/** Время события в секундах → «MM:SS» (для журнала покупок). */
+export function formatEventTime(seconds: number): string {
+  return formatDuration(Math.max(0, Math.floor(seconds)))
+}

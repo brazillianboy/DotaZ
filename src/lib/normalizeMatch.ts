@@ -1,3 +1,4 @@
+import { buildLaningStageData } from './laning'
 import type { NormalizedMatch, NormalizedPlayer, PlayerTeam } from '../types/match'
 
 /**
@@ -119,6 +120,8 @@ function normalizePlayer(raw: unknown): NormalizedPlayer | null {
     gold_per_min: toIntegerOrNull(raw.gold_per_min),
     xp_per_min: toIntegerOrNull(raw.xp_per_min),
     last_hits: toIntegerOrNull(raw.last_hits),
+    // Стадия линии 00:00–10:00 (Task 8): данные читаются из той же записи игрока.
+    laning: buildLaningStageData(raw),
   }
 }
 

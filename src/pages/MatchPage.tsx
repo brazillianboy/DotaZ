@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import MatchSummary from '../components/MatchSummary'
+import LaneReport from '../components/LaneReport'
 import PlayerSelector from '../components/PlayerSelector'
 import PlayerStats from '../components/PlayerStats'
 import { findPlayerBySlot, pickDefaultPlayerSlot } from '../lib/matchView'
@@ -93,7 +94,10 @@ export default function MatchPage() {
                 selectedSlot={selectedSlot}
                 onSelect={setSelectedSlot}
               />
-              <PlayerStats player={selectedPlayer} />
+              <div className="match-details__stack">
+                <PlayerStats player={selectedPlayer} />
+                <LaneReport player={selectedPlayer} />
+              </div>
             </div>
             <Link className="btn btn--ghost" to="/">
               ← Вернуться на главную

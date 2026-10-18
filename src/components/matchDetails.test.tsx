@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
 
+import { buildLaningStageData } from '../lib/laning'
 import type { NormalizedMatch, NormalizedPlayer } from '../types/match'
 import MatchSummary from './MatchSummary'
 import PlayerSelector from './PlayerSelector'
@@ -12,7 +13,7 @@ import PlayerStats from './PlayerStats'
  * дополнительные зависимости (jsdom, testing-library) не добавляются.
  */
 
-function makePlayer(overrides: Partial<NormalizedPlayer> = {}): NormalizedPlayer {
+function makePlayer(overrides: Partial<Omit<NormalizedPlayer, 'laning'>> = {}): NormalizedPlayer {
   return {
     player_slot: 0,
     team: 'radiant',
@@ -23,6 +24,7 @@ function makePlayer(overrides: Partial<NormalizedPlayer> = {}): NormalizedPlayer
     gold_per_min: 619,
     xp_per_min: 786,
     last_hits: 238,
+    laning: buildLaningStageData({}),
     ...overrides,
   }
 }

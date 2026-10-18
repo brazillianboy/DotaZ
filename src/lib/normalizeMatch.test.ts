@@ -44,6 +44,15 @@ describe('Test 1 — полный валидный матч', () => {
       gold_per_min: 100,
       xp_per_min: 100,
       last_hits: 10,
+      laning: {
+        lastHitsAt10: null,
+        goldAt10: null,
+        xpAt10: null,
+        killsFirst10: null,
+        deathsFirst10: null,
+        purchasesFirst10: null,
+        laneEfficiencyPct: null,
+      },
     })
     expect(match.players[1].team).toBe('dire')
   })

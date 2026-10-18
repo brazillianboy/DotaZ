@@ -196,14 +196,67 @@
   align-items: start;
 }
 
+.match-details__stack {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
 .match-summary,
 .match-players,
-.match-stats {
+.match-stats,
+.lane-report {
   display: flex;
   flex-direction: column;
   gap: 14px;
   padding: 24px;
   background: rgba(18, 28, 39, 0.85);
+}
+
+.lane-report__subject {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.lane-purchases {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.lane-purchases__title {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+.lane-purchases__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.lane-purchase {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 6px 10px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  font-size: 12.5px;
+}
+
+.lane-purchase__key {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.lane-purchase__time {
+  color: var(--text-secondary);
 }
 
 .match-section__title {
@@ -320,7 +373,8 @@
 @media (max-width: 560px) {
   .match-summary,
   .match-players,
-  .match-stats {
+  .match-stats,
+  .lane-report {
     padding: 18px;
   }
 

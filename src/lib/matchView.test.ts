@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
+import { buildLaningStageData } from './laning'
 import type { NormalizedPlayer } from '../types/match'
 import {
   NO_DATA_LABEL,
@@ -16,8 +17,8 @@ import {
   winnerLabel,
 } from './matchView'
 
-/** Синтетический участник для тестов представления. */
-function makePlayer(overrides: Partial<NormalizedPlayer> = {}): NormalizedPlayer {
+/** Синтетический участник для тестов представления (без данных стадии линии). */
+function makePlayer(overrides: Partial<Omit<NormalizedPlayer, 'laning'>> = {}): NormalizedPlayer {
   return {
     player_slot: 0,
     team: 'radiant',
@@ -28,6 +29,7 @@ function makePlayer(overrides: Partial<NormalizedPlayer> = {}): NormalizedPlayer
     gold_per_min: 100,
     xp_per_min: 100,
     last_hits: 10,
+    laning: buildLaningStageData({}),
     ...overrides,
   }
 }
