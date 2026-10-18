@@ -1,18 +1,19 @@
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import { normalizeMatch } from '../lib/normalizeMatch'
 import {
   fetchMatchById,
   isRetryableError,
   validateMatchId,
   type OpenDotaError,
-  type OpenDotaMatchResponse,
 } from '../lib/opendota'
+import type { NormalizedMatch } from '../types/match'
 
 type MatchState =
   | { status: 'loading' }
   | { status: 'invalid'; message: string }
-  | { status: 'success'; match: OpenDotaMatchResponse; requestedId: string }
+  | { status: 'success'; match: NormalizedMatch; requestedId: string }
   | { status: 'error'; error: OpenDotaError }
 
 /** Длительность в секундах → «MM:SS» (простое представление поля ответа, без расчётов). */
@@ -52,7 +53,12 @@ export default function MatchPage() {
         return
       }
       if (result.ok) {
-        setState({ status: 'success', match: result.match, requestedId: validation.value })
+        // Нормализация выполняется сразу после успешного получения данных (Task 6).
+        setState({
+          status: 'success',
+          match: normalizeMatch(result.match),
+          requestedId: validation.value,
+        })
         return
       }
       if (result.error.kind === 'aborted') {
@@ -149,7 +155,12 @@ export default function MatchPage() {
                   Запрошенный ID матча: <strong>{state.requestedId}</strong>
                 </li>
                 <li>
-                  ID матча в ответе OpenDota: <strong>{state.match.match_id}</strong>
+                  ID матча в ответе OpenDota:{' '}
+                  {state.match.match_id !== null ? (
+                    <strong>{state.match.match_id}</strong>
+                  ) : (
+                    'нет данных в ответе'
+                  )}
                 </li>
                 <li>
                   Длительность:{' '}
@@ -172,9 +183,15 @@ export default function MatchPage() {
                 </li>
                 <li>
                   Участников в ответе:{' '}
-                  {Array.isArray(state.match.players)
+                  {state.match.players.length > 0
                     ? state.match.players.length
                     : 'нет данных в ответе'}
+                </li>
+                <li>
+                  Стороны по player_slot: Radiant —{' '}
+                  {state.match.players.filter((player) => player.team === 'radiant').length},
+                  Dire —{' '}
+                  {state.match.players.filter((player) => player.team === 'dire').length}
                 </li>
                 <li>Источник данных: OpenDota</li>
               </ul>
