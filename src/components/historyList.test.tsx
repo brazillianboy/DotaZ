@@ -4,11 +4,16 @@ import { describe, expect, it } from 'vitest'
 
 import HistoryList, { historyResultText } from './HistoryList'
 import { parseHistoryRow, type HistoryReportItem } from '../lib/historyReports'
+import { interpolate, translations, type TranslationKey } from '../i18n/translations'
 
 /**
- * SSR-проверки списка личной истории (Task 12).
+ * SSR-проверки списка личной истории (Task 12, локализация — Task 13).
  * Используется уже установленный `react-dom/server` и `StaticRouter` для ссылок.
+ * Локальный `t` повторяет поведение контекста локализации для русского языка.
  */
+
+const t = (key: TranslationKey, params?: Record<string, string | number>) =>
+  interpolate(translations.ru[key], params)
 
 function makeItem(overrides: Record<string, unknown> = {}): HistoryReportItem {
   const parsed = parseHistoryRow({
@@ -89,8 +94,8 @@ describe('HistoryList — карточки сохранённых отчётов
   it('поддерживает результат победы Dire', () => {
     const html = renderList({ items: [makeItem({ radiant_win: false })] })
     expect(html).toContain('Победа Dire')
-    expect(historyResultText(false)).toBe('Победа Dire')
-    expect(historyResultText(null)).toBe('Нет данных')
+    expect(historyResultText(t, false)).toBe('Победа Dire')
+    expect(historyResultText(t, null)).toBe('Нет данных')
   })
 
   it('для пустой истории показывает сообщение без карточек', () => {

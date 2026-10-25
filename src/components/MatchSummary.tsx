@@ -1,5 +1,6 @@
-import { NO_DATA_LABEL, formatDuration, winnerLabel } from '../lib/matchView'
 import type { NormalizedMatch } from '../types/match'
+import { useI18n } from '../i18n/I18nContext'
+import { durationText, winnerText } from '../i18n/viewLabels'
 
 interface MatchSummaryProps {
   match: NormalizedMatch
@@ -7,38 +8,41 @@ interface MatchSummaryProps {
 }
 
 /**
- * Сводка матча (Task 7): только фактические поля нормализованной модели.
- * Отсутствующие значения показываются как «Нет данных» и не подменяются нулями.
+ * Сводка матча (Task 7, локализация — Task 13): только фактические поля
+ * нормализованной модели. Отсутствующие значения показываются как «нет данных»
+ * и не подменяются нулями; числа не изменяются при смене языка.
  */
 export default function MatchSummary({ match, requestedId }: MatchSummaryProps) {
+  const { t } = useI18n()
+
   return (
     <section className="match-summary panel" aria-labelledby="match-summary-title">
-      <span className="badge badge--warn">Данные OpenDota</span>
+      <span className="badge badge--warn">{t('match.badge')}</span>
       <h1 className="stub__title" id="match-summary-title">
-        Матч <span className="accent">{requestedId}</span>
+        {t('match.title', { id: requestedId })}
       </h1>
       <dl className="match-facts">
         <div className="match-facts__item">
-          <dt>ID матча в ответе</dt>
-          <dd>{match.match_id ?? NO_DATA_LABEL}</dd>
+          <dt>{t('match.idInResponse')}</dt>
+          <dd>{match.match_id ?? t('common.noData')}</dd>
         </div>
         <div className="match-facts__item">
-          <dt>Длительность</dt>
+          <dt>{t('match.duration')}</dt>
           <dd>
-            {formatDuration(match.duration)}
-            {match.duration !== null ? ` (${match.duration} с)` : ''}
+            {durationText(t, match.duration)}
+            {match.duration !== null ? ` ${t('match.durationSeconds', { seconds: match.duration })}` : ''}
           </dd>
         </div>
         <div className="match-facts__item">
-          <dt>Победитель</dt>
-          <dd>{winnerLabel(match.radiant_win)}</dd>
+          <dt>{t('match.winner')}</dt>
+          <dd>{winnerText(t, match.radiant_win)}</dd>
         </div>
         <div className="match-facts__item">
-          <dt>Участников в ответе</dt>
-          <dd>{match.players.length > 0 ? match.players.length : NO_DATA_LABEL}</dd>
+          <dt>{t('match.playersInResponse')}</dt>
+          <dd>{match.players.length > 0 ? match.players.length : t('common.noData')}</dd>
         </div>
         <div className="match-facts__item">
-          <dt>Источник данных</dt>
+          <dt>{t('match.source')}</dt>
           <dd>OpenDota</dd>
         </div>
       </dl>

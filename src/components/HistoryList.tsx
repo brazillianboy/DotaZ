@@ -1,11 +1,10 @@
 import { Link } from 'react-router-dom'
 
-import {
-  formatHistoryTimestamp,
-  type HistoryReportItem,
-} from '../lib/historyReports'
+import type { HistoryReportItem } from '../lib/historyReports'
 import { isOpenableHistoryItem } from '../lib/historyFlow'
 import type { MatchReportStatus } from '../lib/matchReports'
+import { useI18n } from '../i18n/I18nContext'
+import type { TranslationKey } from '../i18n/translations'
 
 interface HistoryListProps {
   items: HistoryReportItem[]
@@ -17,26 +16,28 @@ interface HistoryListProps {
   skippedCount: number
 }
 
-const STATUS_PRESENTATION: Record<MatchReportStatus, { text: string; badgeClass: string }> = {
-  ready: { text: 'Полный отчёт', badgeClass: 'badge badge--ok' },
-  partial: { text: 'Частичный отчёт', badgeClass: 'badge badge--warn' },
-  pending: { text: 'Ожидает расчёта', badgeClass: 'badge badge--warn' },
-  error: { text: 'Ошибка расчёта', badgeClass: 'badge badge--warn' },
+type Translate = (key: TranslationKey, params?: Record<string, string | number>) => string
+
+const STATUS_KEYS: Record<MatchReportStatus, { key: TranslationKey; badgeClass: string }> = {
+  ready: { key: 'history.status.ready', badgeClass: 'badge badge--ok' },
+  partial: { key: 'history.status.partial', badgeClass: 'badge badge--warn' },
+  pending: { key: 'history.status.pending', badgeClass: 'badge badge--warn' },
+  error: { key: 'history.status.error', badgeClass: 'badge badge--warn' },
 }
 
 /** Результат матча: только из сохранённого снимка, без выводов из статистики игроков. */
-export function historyResultText(radiantWin: boolean | null): string {
+export function historyResultText(t: Translate, radiantWin: boolean | null): string {
   if (radiantWin === true) {
-    return 'Победа Radiant'
+    return t('history.result.radiant')
   }
   if (radiantWin === false) {
-    return 'Победа Dire'
+    return t('history.result.dire')
   }
-  return 'Нет данных'
+  return t('common.noData')
 }
 
 /**
- * Список сохранённых личных анализов (Task 12).
+ * Список сохранённых личных анализов (Task 12, локализация — Task 13).
  *
  * Карточка показывает ID матча, дату сохранения, результат (если подтверждён),
  * статус отчёта, источник и версию правил. Внутренние UUID строк не выводятся.
@@ -50,52 +51,58 @@ export default function HistoryList({
   onLoadMore,
   skippedCount,
 }: HistoryListProps) {
+  const { t, formatDateTime } = useI18n()
+
   if (items.length === 0) {
-    return (
-      <p className="stub__text">У вас пока нет сохранённых анализов.</p>
-    )
+    return <p className="stub__text">{t('history.empty')}</p>
   }
 
   return (
     <div className="history">
       <ul className="history-list">
         {items.map((item) => {
-          const status = STATUS_PRESENTATION[item.status]
-          const savedAt = formatHistoryTimestamp(item.createdAt)
+          const status = STATUS_KEYS[item.status]
+          const statusText = t(status.key)
+          const savedAt = formatDateTime(item.createdAt)
           const openable = isOpenableHistoryItem(item)
           return (
             <li className="history-card panel" key={item.id}>
               <div className="history-card__head">
-                <h3 className="history-card__title">Матч {item.matchId}</h3>
-                <span className={status.badgeClass}>{status.text}</span>
+                <h3 className="history-card__title">
+                  {t('history.matchTitle', { id: item.matchId })}
+                </h3>
+                <span className={status.badgeClass}>{statusText}</span>
               </div>
 
               <dl className="history-card__meta">
                 <div className="history-card__row">
-                  <dt>Сохранён</dt>
-                  <dd>{savedAt ?? 'Нет данных'}</dd>
+                  <dt>{t('history.savedAtLabel')}</dt>
+                  <dd>{savedAt ?? t('common.noData')}</dd>
                 </div>
                 <div className="history-card__row">
-                  <dt>Результат</dt>
-                  <dd>{historyResultText(item.radiantWin)}</dd>
+                  <dt>{t('history.resultLabel')}</dt>
+                  <dd>{historyResultText(t, item.radiantWin)}</dd>
                 </div>
                 <div className="history-card__row">
-                  <dt>Источник</dt>
+                  <dt>{t('history.sourceLabel')}</dt>
                   <dd>{item.source}</dd>
                 </div>
                 <div className="history-card__row">
-                  <dt>Версия правил</dt>
-                  <dd>{item.rulesVersion ?? 'не указана'}</dd>
+                  <dt>{t('history.rulesLabel')}</dt>
+                  <dd>{item.rulesVersion ?? t('history.rulesMissing')}</dd>
                 </div>
               </dl>
 
               {openable ? (
-                <Link className="btn btn--primary history-card__action" to={`/matches/${item.matchId}`}>
-                  Открыть отчёт
+                <Link
+                  className="btn btn--primary history-card__action"
+                  to={`/matches/${item.matchId}`}
+                >
+                  {t('history.openReport')}
                 </Link>
               ) : (
                 <p className="history-card__state" role="note">
-                  Открытие недоступно: {status.text.toLowerCase()}.
+                  {t('history.openUnavailable', { status: statusText.toLowerCase() })}
                 </p>
               )}
             </li>
@@ -105,19 +112,20 @@ export default function HistoryList({
 
       {skippedCount > 0 && (
         <p className="history__note" role="note">
-          Часть записей не показана: непригодные метаданные ({skippedCount}). Данные не
-          изменялись и не удалялись.
+          {t('common.skippedRecords', { count: skippedCount })}
         </p>
       )}
 
       {hasMore && (
         <div className="history__more">
-          <p className="history__note">
-            Показаны последние {items.length} отчётов. Более ранние можно догрузить — список
-            не является полным.
-          </p>
-          <button type="button" className="btn btn--ghost" onClick={onLoadMore} disabled={loadingMore}>
-            {loadingMore ? 'Загружаем…' : 'Показать ещё'}
+          <p className="history__note">{t('history.incomplete', { count: items.length })}</p>
+          <button
+            type="button"
+            className="btn btn--ghost"
+            onClick={onLoadMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? t('history.loadingMore') : t('history.showMore')}
           </button>
         </div>
       )}

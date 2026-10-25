@@ -27,9 +27,9 @@ function renderPage(auth: Partial<AuthContextValue>) {
     session: null,
     loading: true,
     isConfigured: true,
-    signUp: async () => ({ ok: false, error: null, needsEmailConfirmation: false }),
-    signIn: async () => ({ ok: false, error: null, needsEmailConfirmation: false }),
-    signOut: async () => ({ ok: false, error: null, needsEmailConfirmation: false }),
+    signUp: async () => ({ ok: false, error: null, errorCode: null, needsEmailConfirmation: false }),
+    signIn: async () => ({ ok: false, error: null, errorCode: null, needsEmailConfirmation: false }),
+    signOut: async () => ({ ok: false, error: null, errorCode: null, needsEmailConfirmation: false }),
     ...auth,
   }
   return renderToStaticMarkup(

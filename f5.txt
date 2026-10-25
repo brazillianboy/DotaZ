@@ -1,0 +1,41 @@
+﻿ M PLAN.md
+ M README.md
+ M src/components/AnalysisReport.tsx
+ M src/components/AppHeader.tsx
+ M src/components/AppLayout.tsx
+ M src/components/EvidenceList.tsx
+ M src/components/HistoryList.tsx
+ M src/components/LaneReport.tsx
+ M src/components/MatchPreviewCard.tsx
+ M src/components/MatchSummary.tsx
+ M src/components/PlaceholderPanel.tsx
+ M src/components/PlayerSelector.tsx
+ M src/components/PlayerStats.tsx
+ M src/components/ProtectedRoute.tsx
+ M src/components/RecommendationsList.tsx
+ M src/components/ReportLimitations.tsx
+ M src/components/ReportPersistenceNotice.tsx
+ M src/components/historyList.test.tsx
+ M src/contexts/AuthContext.tsx
+ M src/lib/authErrors.ts
+ M src/lib/opendota.ts
+ M src/main.tsx
+ M src/pages/AuthConfirmPage.tsx
+ M src/pages/HeroesPage.tsx
+ M src/pages/HistoryPage.tsx
+ M src/pages/HomePage.tsx
+ M src/pages/LoginPage.tsx
+ M src/pages/MatchPage.tsx
+ M src/pages/NotFoundPage.tsx
+ M src/pages/RegisterPage.tsx
+ M src/pages/historyPage.test.tsx
+ M src/styles/layout.css
+?? f1.txt
+?? f2.txt
+?? f3.txt
+?? f4.txt
+?? f5.txt
+?? src/components/LanguageSwitcher.tsx
+?? src/components/protectedRoute.test.tsx
+?? src/i18n/
+?? src/pages/matchPage.test.tsx

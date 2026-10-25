@@ -1,33 +1,30 @@
 import { hasLaningFacts } from '../lib/laning'
-import {
-  NO_DATA_LABEL,
-  formatEventTime,
-  formatLaneEfficiencyPct,
-  formatStat,
-  playerLabel,
-} from '../lib/matchView'
 import type { NormalizedPlayer } from '../types/match'
+import { useI18n } from '../i18n/I18nContext'
+import { durationText, laneEfficiencyText, playerText, statText } from '../i18n/viewLabels'
 
 interface LaneReportProps {
   player: NormalizedPlayer | null
 }
 
 /**
- * Отчёт о стадии линии 00:00–10:00 (Task 8).
+ * Отчёт о стадии линии 00:00–10:00 (Task 8, локализация — Task 13).
  *
  * Показывает только фактические значения из ответа OpenDota: поминутные показатели
  * (`lh_t[10]`, `gold_t[10]`, `xp_t[10]`), события первых десяти минут и процент
  * эффективности линии провайдера. Оценки качества линии, нормативы героя/роли и
- * рекомендации не выполняются (Task 9+).
+ * рекомендации не выполняются. Фиксированный интервал 00:00–10:00 не изменяется.
  */
 export default function LaneReport({ player }: LaneReportProps) {
+  const { t, locale } = useI18n()
+
   if (player === null) {
     return (
       <section className="lane-report panel" aria-labelledby="lane-report-title">
         <h2 className="match-section__title" id="lane-report-title">
-          Стадия линии — 00:00–10:00
+          {t('laning.title')}
         </h2>
-        <p className="stub__text">Выберите участника, чтобы увидеть данные стадии линии.</p>
+        <p className="stub__text">{t('laning.empty')}</p>
       </section>
     )
   }
@@ -37,59 +34,55 @@ export default function LaneReport({ player }: LaneReportProps) {
   return (
     <section className="lane-report panel" aria-labelledby="lane-report-title">
       <h2 className="match-section__title" id="lane-report-title">
-        Стадия линии — 00:00–10:00
+        {t('laning.title')}
       </h2>
-      <p className="lane-report__subject">{playerLabel(player)}</p>
+      <p className="lane-report__subject">{playerText(t, player)}</p>
 
       {!hasLaningFacts(laning) ? (
         <p className="auth-alert auth-alert--error" role="status">
-          Детальные данные стадии линии для этого матча недоступны: OpenDota не вернула
-          поминутные ряды и журналы событий (реплей не обработан). Отсутствующие значения
-          не подменяются нулями.
+          {t('laning.unavailable')}
         </p>
       ) : (
         <>
           <dl className="match-facts match-facts--grid">
             <div className="match-facts__item">
-              <dt>Добивания к 10:00</dt>
-              <dd>{formatStat(laning.lastHitsAt10)}</dd>
+              <dt>{t('laning.lastHits')}</dt>
+              <dd>{statText(t, laning.lastHitsAt10)}</dd>
             </div>
             <div className="match-facts__item">
-              <dt>Золото к 10:00</dt>
-              <dd>{formatStat(laning.goldAt10)}</dd>
+              <dt>{t('laning.gold')}</dt>
+              <dd>{statText(t, laning.goldAt10)}</dd>
             </div>
             <div className="match-facts__item">
-              <dt>Опыт к 10:00</dt>
-              <dd>{formatStat(laning.xpAt10)}</dd>
+              <dt>{t('laning.xp')}</dt>
+              <dd>{statText(t, laning.xpAt10)}</dd>
             </div>
             <div className="match-facts__item">
-              <dt>Убийства 00:00–10:00</dt>
-              <dd>{formatStat(laning.killsFirst10)}</dd>
+              <dt>{t('laning.kills')}</dt>
+              <dd>{statText(t, laning.killsFirst10)}</dd>
             </div>
             <div className="match-facts__item">
-              <dt>Смерти 00:00–10:00</dt>
-              <dd>{formatStat(laning.deathsFirst10)}</dd>
+              <dt>{t('laning.deaths')}</dt>
+              <dd>{statText(t, laning.deathsFirst10)}</dd>
             </div>
             <div className="match-facts__item">
-              <dt>Эффективность линии (OpenDota)</dt>
-              <dd>{formatLaneEfficiencyPct(laning.laneEfficiencyPct)}</dd>
+              <dt>{t('laning.efficiency')}</dt>
+              <dd>{laneEfficiencyText(t, laning.laneEfficiencyPct, locale)}</dd>
             </div>
           </dl>
 
           <div className="lane-purchases">
             <h3 className="lane-purchases__title">
-              Покупки 00:00–10:00:{' '}
+              {t('laning.purchasesTitle')}{' '}
               {laning.purchasesFirst10 === null
-                ? NO_DATA_LABEL
+                ? t('common.noData')
                 : laning.purchasesFirst10.length}
             </h3>
             {laning.purchasesFirst10 === null && (
-              <p className="stub__hint">Журнал покупок недоступен в ответе OpenDota.</p>
+              <p className="stub__hint">{t('laning.purchasesMissing')}</p>
             )}
             {laning.purchasesFirst10 !== null && laning.purchasesFirst10.length === 0 && (
-              <p className="stub__hint">
-                В интервале 00:00–10:00 покупок нет (журнал получен).
-              </p>
+              <p className="stub__hint">{t('laning.purchasesEmpty')}</p>
             )}
             {laning.purchasesFirst10 !== null && laning.purchasesFirst10.length > 0 && (
               <ul className="lane-purchases__list">
@@ -99,7 +92,9 @@ export default function LaneReport({ player }: LaneReportProps) {
                     key={`${purchase.key}-${purchase.time}-${index}`}
                   >
                     <span className="lane-purchase__key">{purchase.key}</span>
-                    <span className="lane-purchase__time">{formatEventTime(purchase.time)}</span>
+                    <span className="lane-purchase__time">
+                      {durationText(t, Math.max(0, Math.floor(purchase.time)))}
+                    </span>
                   </li>
                 ))}
               </ul>
@@ -108,13 +103,7 @@ export default function LaneReport({ player }: LaneReportProps) {
         </>
       )}
 
-      <p className="stub__hint">
-        Источник: OpenDota. Период: 00:00–10:00. Поминутные показатели берутся из массивов
-        OpenDota (индекс 10 соответствует 10:00) и не подменяются статистикой за весь матч;
-        события фильтруются по времени в секундах. «Нет данных» означает отсутствие поля
-        в ответе. Оценки качества линии не выполняются: подтверждённые нормы героя и роли
-        появятся в следующих задачах.
-      </p>
+      <p className="stub__hint">{t('laning.hint')}</p>
     </section>
   )
 }

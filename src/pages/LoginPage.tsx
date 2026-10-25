@@ -2,6 +2,8 @@ import { useState, type FormEvent } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { useAuth } from '../hooks/useAuth'
+import { useI18n } from '../i18n/I18nContext'
+import { authErrorText, type AuthErrorCode } from '../i18n/errors'
 
 /**
  * Безопасный целевой маршрут после входа (Task 4).
@@ -33,6 +35,7 @@ function getSafeRedirectTarget(state: unknown): string {
  */
 export default function LoginPage() {
   const { signIn, user, loading, isConfigured } = useAuth()
+  const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
   const redirectTo = getSafeRedirectTarget(location.state)
@@ -40,6 +43,7 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -48,13 +52,14 @@ export default function LoginPage() {
       return
     }
     setError(null)
+    setErrorCode(null)
 
     if (!email.trim()) {
-      setError('Укажите email.')
+      setError(t('auth.error.emailRequired'))
       return
     }
     if (!password) {
-      setError('Укажите пароль.')
+      setError(t('auth.error.passwordRequired'))
       return
     }
 
@@ -66,30 +71,29 @@ export default function LoginPage() {
       navigate(redirectTo, { replace: true })
       return
     }
-    setError(result.error)
+    setErrorCode(result.errorCode)
+    setError(authErrorText(t, result.errorCode, result.error))
   }
 
   return (
     <section className="stub">
       <div className="container">
         <div className="stub__panel panel auth-panel">
-          <h1 className="stub__title">Вход в аккаунт</h1>
+          <h1 className="stub__title">{t('auth.loginTitle')}</h1>
 
           {loading && (
             <p className="stub__text" role="status" aria-live="polite">
-              Проверяем сессию…
+              {t('auth.checkingSession')}
             </p>
           )}
 
           {!loading && !isConfigured && (
             <>
               <p className="auth-alert auth-alert--error" role="alert">
-                Авторизация недоступна: Supabase не настроен. Добавьте
-                VITE_SUPABASE_URL и VITE_SUPABASE_PUBLISHABLE_KEY в локальный
-                .env (см. .env.example) и перезапустите dev-сервер.
+                {t('auth.notConfiguredLogin')}
               </p>
               <Link className="btn btn--ghost" to="/">
-                ← Вернуться на главную
+                {t('common.backHome')}
               </Link>
             </>
           )}
@@ -97,10 +101,10 @@ export default function LoginPage() {
           {!loading && isConfigured && user && (
             <>
               <p className="auth-alert auth-alert--success" role="status">
-                Вы уже вошли в аккаунт ({user.email}).
+                {t('auth.alreadyLoggedIn', { email: user.email ?? '' })}
               </p>
               <Link className="btn btn--primary" to="/">
-                Перейти на главную
+                {t('common.goHome')}
               </Link>
             </>
           )}
@@ -109,13 +113,13 @@ export default function LoginPage() {
             <form className="auth-form" onSubmit={handleSubmit} noValidate>
               {error && (
                 <p className="auth-alert auth-alert--error" role="alert">
-                  {error}
+                  {errorCode === null ? error : authErrorText(t, errorCode, error)}
                 </p>
               )}
 
               <div className="auth-field">
                 <label className="auth-label" htmlFor="login-email">
-                  Email
+                  {t('auth.emailLabel')}
                 </label>
                 <input
                   className="auth-input"
@@ -123,7 +127,7 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   disabled={submitting}
@@ -133,7 +137,7 @@ export default function LoginPage() {
 
               <div className="auth-field">
                 <label className="auth-label" htmlFor="login-password">
-                  Пароль
+                  {t('auth.passwordLabel')}
                 </label>
                 <input
                   className="auth-input"
@@ -141,7 +145,7 @@ export default function LoginPage() {
                   name="password"
                   type="password"
                   autoComplete="current-password"
-                  placeholder="••••••••"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   disabled={submitting}
@@ -150,11 +154,12 @@ export default function LoginPage() {
               </div>
 
               <button type="submit" className="btn btn--primary auth-submit" disabled={submitting}>
-                {submitting ? 'Входим…' : 'Войти'}
+                {submitting ? t('auth.submittingLogin') : t('auth.submitLogin')}
               </button>
 
               <p className="auth-hint">
-                Нет аккаунта? <Link to="/register">Зарегистрируйтесь</Link>.
+                {t('auth.noAccountHint')}{' '}
+                <Link to="/register">{t('auth.registerLink')}</Link>.
               </p>
             </form>
           )}

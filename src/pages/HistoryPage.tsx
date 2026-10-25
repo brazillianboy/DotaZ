@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import HistoryList from '../components/HistoryList'
 import { useAuth } from '../hooks/useAuth'
 import { loadHistoryPage, type HistoryFlowDeps } from '../lib/historyFlow'
+import { useI18n } from '../i18n/I18nContext'
 import {
   createHistoryReportsService,
   createRequestGuard,
@@ -35,6 +36,7 @@ type HistoryState =
  */
 export default function HistoryPage() {
   const { user, loading, isConfigured } = useAuth()
+  const { t } = useI18n()
   const [state, setState] = useState<HistoryState>({ status: 'loading' })
   const [loadingMore, setLoadingMore] = useState(false)
   const guardRef = useRef(createRequestGuard())
@@ -166,34 +168,31 @@ export default function HistoryPage() {
     <section className="stub" aria-busy={state.status === 'loading'}>
       <div className="container">
         <div className="history-page__head">
-          <span className="badge badge--warn">Личные данные</span>
-          <h1 className="stub__title">История анализов</h1>
-          <p className="stub__text">
-            Сохранённые отчёты доступны только вашему аккаунту: показаны матчи, которые вы
-            проанализировали, и открыть их можно без нового запроса к OpenDota.
-          </p>
+          <span className="badge badge--warn">{t('history.badge')}</span>
+          <h1 className="stub__title">{t('history.title')}</h1>
+          <p className="stub__text">{t('history.lead')}</p>
         </div>
 
         <div className="stub__panel panel">
           {state.status === 'loading' && (
             <p className="stub__text" role="status" aria-live="polite">
-              Загружаем историю анализов…
+              {t('history.loading')}
             </p>
           )}
 
           {state.status === 'waiting-auth' && (
             <p className="stub__text" role="status" aria-live="polite">
-              Проверяем вашу сессию…
+              {t('history.waitingAuth')}
             </p>
           )}
 
           {state.status === 'signed-out' && (
             <>
               <p className="stub__text" role="status" aria-live="polite">
-                История доступна только после входа в аккаунт.
+                {t('history.signedOut')}
               </p>
               <Link className="btn btn--primary" to="/login">
-                Войти в аккаунт
+                {t('history.loginLink')}
               </Link>
             </>
           )}
@@ -203,23 +202,18 @@ export default function HistoryPage() {
               <p className="auth-alert auth-alert--error" role="alert">
                 {state.message}
               </p>
-              <p className="stub__text">
-                Анализ матчей по-прежнему доступен на странице матча, но сохранённая история
-                недоступна без настроенного подключения.
-              </p>
+              <p className="stub__text">{t('history.noDatabaseNote')}</p>
             </>
           )}
 
           {state.status === 'empty' && (
             <>
               <p className="stub__text" role="status" aria-live="polite">
-                У вас пока нет сохранённых анализов.
+                {t('history.empty')}
               </p>
-              <p className="stub__text">
-                Откройте матч по ID — отчёт сохранится автоматически и появится здесь.
-              </p>
+              <p className="stub__text">{t('history.emptyHint')}</p>
               <Link className="btn btn--primary" to="/">
-                Проанализировать матч
+                {t('history.emptyCta')}
               </Link>
             </>
           )}
@@ -227,15 +221,15 @@ export default function HistoryPage() {
           {state.status === 'error' && (
             <>
               <p className="stub__text" role="alert">
-                Не удалось загрузить историю анализов.
+                {t('history.error')}
               </p>
               <p className="auth-alert auth-alert--error">{state.error.message}</p>
               <div className="stub__actions">
                 <button type="button" className="btn btn--primary" onClick={handleRetry}>
-                  Повторить загрузку
+                  {t('history.retry')}
                 </button>
                 <Link className="btn btn--ghost" to="/">
-                  ← Вернуться на главную
+                  {t('common.backHome')}
                 </Link>
               </div>
             </>
@@ -252,7 +246,7 @@ export default function HistoryPage() {
               />
               <div className="stub__actions">
                 <Link className="btn btn--ghost" to="/">
-                  ← Вернуться на главную
+                  {t('common.backHome')}
                 </Link>
               </div>
             </>

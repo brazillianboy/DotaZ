@@ -24,20 +24,23 @@ import { createSupabaseMatchReportsClient } from '../lib/matchReportsSupabase'
 import { findPlayerBySlot, pickDefaultPlayerSlot } from '../lib/matchView'
 import { fetchMatchById, isRetryableError, validateMatchId, type OpenDotaError } from '../lib/opendota'
 import { getSupabase } from '../lib/supabase'
+import { useI18n } from '../i18n/I18nContext'
+import { matchIdErrorText, openDotaErrorText, type MatchIdErrorCode } from '../i18n/errors'
+import type { TranslationKey } from '../i18n/translations'
 
 type MatchState =
   | { status: 'loading' }
-  | { status: 'invalid'; message: string }
+  | { status: 'invalid'; message: string; code: MatchIdErrorCode }
   | { status: 'report'; view: MatchReportView; save: ReportSaveState }
   | { status: 'report-error'; message: string }
   | { status: 'error'; error: OpenDotaError }
 
-/** Тексты шагов работы (Task 11): видно, что именно выполняется сейчас. */
-const PHASE_TEXT: Record<MatchReportFlowPhase, string> = {
-  'checking-report': 'Проверяем сохранённый отчёт…',
-  'fetching-match': 'Запрашиваем данные матча у OpenDota…',
-  analyzing: 'Формируем наблюдения по всем участникам…',
-  saving: 'Сохраняем отчёт в личную историю…',
+/** Ключи словаря для шагов работы (Task 11): видно, что именно выполняется сейчас. */
+const PHASE_KEYS: Record<MatchReportFlowPhase, TranslationKey> = {
+  'checking-report': 'match.phase.checkingReport',
+  'fetching-match': 'match.phase.fetching',
+  analyzing: 'match.phase.analyzing',
+  saving: 'match.phase.saving',
 }
 
 /**
@@ -56,6 +59,7 @@ const PHASE_TEXT: Record<MatchReportFlowPhase, string> = {
 export default function MatchPage() {
   const { matchId } = useParams<{ matchId: string }>()
   const { user, loading: authLoading, isConfigured } = useAuth()
+  const { t } = useI18n()
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<MatchState>({ status: 'loading' })
   const [phase, setPhase] = useState<MatchReportFlowPhase | null>(null)
@@ -87,7 +91,7 @@ export default function MatchPage() {
   useEffect(() => {
     const validation = validateMatchId(matchId ?? '')
     if (!validation.ok) {
-      setState({ status: 'invalid', message: validation.message })
+      setState({ status: 'invalid', message: validation.message, code: validation.code })
       setSelectedSlot(null)
       setPhase(null)
       return
@@ -189,7 +193,7 @@ export default function MatchPage() {
               save={state.save}
               loginLink={
                 <Link className="btn btn--ghost" to="/login">
-                  Войти в аккаунт
+                  {t('persistence.guest.loginLink')}
                 </Link>
               }
               onRetrySave={handleRetrySave}
@@ -212,66 +216,62 @@ export default function MatchPage() {
               analysis={selectedAnalysis}
             />
             <Link className="btn btn--ghost" to="/">
-              ← Вернуться на главную
+              {t('common.backHome')}
             </Link>
           </div>
         ) : (
           <div className="stub__panel panel">
           {state.status === 'loading' && (
             <>
-              <span className="badge badge--warn">Загрузка</span>
-              <h1 className="stub__title">
-                Матч <span className="accent">{matchId}</span>
-              </h1>
+              <span className="badge badge--warn">{t('match.loadingBadge')}</span>
+              <h1 className="stub__title">{t('match.title', { id: matchId ?? '' })}</h1>
               <p className="stub__text" role="status" aria-live="polite">
-                {phase === null ? 'Проверяем состояние сессии…' : PHASE_TEXT[phase]}
+                {phase === null ? t('match.phase.session') : t(PHASE_KEYS[phase])}
               </p>
             </>
           )}
 
           {state.status === 'invalid' && (
             <>
-              <span className="badge badge--warn">Некорректный ID</span>
-              <h1 className="stub__title">Проверьте ID матча</h1>
+              <span className="badge badge--warn">{t('match.invalid.badge')}</span>
+              <h1 className="stub__title">{t('match.invalid.title')}</h1>
               <p className="auth-alert auth-alert--error" role="alert">
-                {state.message}
+                {matchIdErrorText(t, state.code)}
               </p>
-              <p className="stub__text">
-                Запрос к OpenDota не отправлялся: ID матча должен быть положительным
-                целым числом.
-              </p>
+              <p className="stub__text">{t('match.invalid.note')}</p>
               <Link className="btn btn--ghost" to="/">
-                ← Вернуться на главную
+                {t('common.backHome')}
               </Link>
             </>
           )}
 
           {state.status === 'error' && (
             <>
-              <span className="badge badge--warn">Ошибка запроса</span>
-              <h1 className="stub__title">
-                Не удалось получить матч <span className="accent">{matchId}</span>
-              </h1>
+              <span className="badge badge--warn">{t('match.error.badge')}</span>
+              <h1 className="stub__title">{t('match.error.title', { id: matchId ?? '' })}</h1>
               <p className="auth-alert auth-alert--error" role="alert">
-                {state.error.message}
+                {openDotaErrorText(t, state.error.kind, {
+                  status: state.error.status,
+                  fallback: state.error.message,
+                })}
               </p>
               <ul className="stub__list">
-                <li>Источник данных: OpenDota (запрос завершился ошибкой)</li>
+                <li>{t('match.error.sourceLine')}</li>
                 {typeof state.error.status === 'number' && (
-                  <li>HTTP-статус ответа: <strong>{state.error.status}</strong></li>
+                  <li>
+                    {t('errors.opendota.httpStatus', { status: state.error.status })}
+                  </li>
                 )}
-                {state.error.kind === 'not_found' && (
-                  <li>Проверьте ID матча: возможно, он указан неверно.</li>
-                )}
+                {state.error.kind === 'not_found' && <li>{t('errors.opendota.checkId')}</li>}
               </ul>
               <div className="stub__actions">
                 {isRetryableError(state.error.kind) && (
                   <button type="button" className="btn btn--primary" onClick={retry}>
-                    Повторить запрос
+                    {t('match.error.retry')}
                   </button>
                 )}
                 <Link className="btn btn--ghost" to="/">
-                  ← Вернуться на главную
+                  {t('common.backHome')}
                 </Link>
               </div>
             </>
@@ -279,21 +279,17 @@ export default function MatchPage() {
 
           {state.status === 'report-error' && (
             <>
-              <span className="badge badge--warn">Сохранённый отчёт недоступен</span>
+              <span className="badge badge--warn">{t('match.reportError.badge')}</span>
               <h1 className="stub__title">
-                Не удалось показать сохранённый отчёт по матчу{' '}
-                <span className="accent">{matchId}</span>
+                {t('match.reportError.title', { id: matchId ?? '' })}
               </h1>
               <p className="auth-alert auth-alert--error" role="alert">
                 {state.message}
               </p>
-              <p className="stub__text">
-                Запись в базе данных не изменялась: повреждённый или неизвестный формат отчёта
-                не перезаписывается автоматически, новый отчёт для этого матча не создавался.
-              </p>
+              <p className="stub__text">{t('match.reportError.note')}</p>
               <div className="stub__actions">
                 <Link className="btn btn--ghost" to="/">
-                  ← Вернуться на главную
+                  {t('common.backHome')}
                 </Link>
               </div>
             </>

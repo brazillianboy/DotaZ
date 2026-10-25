@@ -1,10 +1,8 @@
 import PlaceholderPanel from '../components/PlaceholderPanel'
+import { useI18n } from '../i18n/I18nContext'
 
 export default function HeroesPage() {
-  return (
-    <PlaceholderPanel
-      title="Персонажи"
-      description="Каталог героев, винрейты, пики, предметы и средние показатели появятся позже — после подтверждения источника данных и методики расчёта. Сейчас это дизайн-заготовка раздела."
-    />
-  )
+  const { t } = useI18n()
+
+  return <PlaceholderPanel title={t('heroes.title')} description={t('heroes.description')} />
 }

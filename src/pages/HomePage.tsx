@@ -1,8 +1,11 @@
-import { useState, type FormEvent } from 'react'
+import { useState, type FormEvent, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import MatchPreviewCard from '../components/MatchPreviewCard'
 import { validateMatchId } from '../lib/opendota'
+import { useI18n } from '../i18n/I18nContext'
+import { matchIdErrorText, type MatchIdErrorCode } from '../i18n/errors'
+import type { TranslationKey } from '../i18n/translations'
 
 /* Иконки раздела возможностей (inline SVG). */
 function IconBars() {
@@ -69,19 +72,42 @@ function IconGlobe() {
 }
 
 /* Планируемые возможности платформы: секция описывает планы, а не текущий функционал. */
-const FEATURES = [
-  { icon: <IconBars />, title: 'Подробная аналитика', text: 'Статистика, наблюдения и рекомендации.' },
-  { icon: <IconUsers />, title: 'Информация о мете', text: 'Актуальные герои и стратегии.' },
-  { icon: <IconTarget />, title: 'Анализ линии', text: 'Разбор первых 10 минут матча.' },
-  { icon: <IconBook />, title: 'Средние показатели', text: 'Сравнение с другими игроками.' },
-  { icon: <IconClock />, title: 'Личная история', text: 'Все проанализированные матчи.' },
-  { icon: <IconGlobe />, title: 'Русский и английский', text: 'Выбери удобный язык.' },
+interface FeatureEntry {
+  icon: ReactNode
+  titleKey: TranslationKey
+  textKey: TranslationKey
+}
+
+const FEATURE_KEYS: FeatureEntry[] = [
+  {
+    icon: <IconBars />,
+    titleKey: 'home.feature.analytics.title',
+    textKey: 'home.feature.analytics.text',
+  },
+  { icon: <IconUsers />, titleKey: 'home.feature.meta.title', textKey: 'home.feature.meta.text' },
+  { icon: <IconTarget />, titleKey: 'home.feature.lane.title', textKey: 'home.feature.lane.text' },
+  {
+    icon: <IconBook />,
+    titleKey: 'home.feature.averages.title',
+    textKey: 'home.feature.averages.text',
+  },
+  {
+    icon: <IconClock />,
+    titleKey: 'home.feature.history.title',
+    textKey: 'home.feature.history.text',
+  },
+  {
+    icon: <IconGlobe />,
+    titleKey: 'home.feature.languages.title',
+    textKey: 'home.feature.languages.text',
+  },
 ]
 
 export default function HomePage() {
   const navigate = useNavigate()
+  const { t } = useI18n()
   const [matchIdValue, setMatchIdValue] = useState('')
-  const [matchIdError, setMatchIdError] = useState<string | null>(null)
+  const [matchIdError, setMatchIdError] = useState<MatchIdErrorCode | null>(null)
 
   /**
    * Отправка формы (Task 5): валидация ID и переход на страницу матча,
@@ -91,7 +117,7 @@ export default function HomePage() {
     event.preventDefault()
     const result = validateMatchId(matchIdValue)
     if (!result.ok) {
-      setMatchIdError(result.message)
+      setMatchIdError(result.code)
       return
     }
     setMatchIdError(null)
@@ -111,17 +137,13 @@ export default function HomePage() {
         <div className="container hero__inner">
           <div className="hero__content">
             <h1 className="hero__title">
-              Анализируй свои игры в Dota 2 и становись лучше с{' '}
-              <span className="accent">DotaZ</span>
+              {t('home.titlePrefix')} <span className="accent">DotaZ</span>
             </h1>
-            <p className="hero__lead">
-              Разбирай матчи, получай достоверную статистику и обоснованные наблюдения,
-              следи за метой. Всё, что нужно для роста — в одной платформе.
-            </p>
+            <p className="hero__lead">{t('home.lead')}</p>
 
             <form
               className="match-form"
-              aria-label="Форма получения матча"
+              aria-label={t('home.formLabel')}
               onSubmit={handleMatchSubmit}
               noValidate
             >
@@ -138,8 +160,8 @@ export default function HomePage() {
                     type="text"
                     inputMode="numeric"
                     autoComplete="off"
-                    placeholder="Введите ID матча (например, 9007760151)"
-                    aria-label="ID матча"
+                    placeholder={t('home.inputPlaceholder')}
+                    aria-label={t('home.inputLabel')}
                     aria-describedby="match-form-notice"
                     aria-invalid={matchIdError ? true : undefined}
                     value={matchIdValue}
@@ -152,14 +174,14 @@ export default function HomePage() {
                   />
                 </div>
                 <button type="submit" className="btn btn--primary btn--lg match-form__submit">
-                  Анализировать
+                  {t('home.submit')}
                   <span aria-hidden="true"> →</span>
                 </button>
               </div>
 
-              {matchIdError && (
+              {matchIdError !== null && (
                 <p className="auth-alert auth-alert--error match-form__error" role="alert">
-                  {matchIdError}
+                  {matchIdErrorText(t, matchIdError)}
                 </p>
               )}
 
@@ -176,16 +198,15 @@ export default function HomePage() {
                     />
                     <circle cx="12" cy="16.6" r="1" fill="currentColor" />
                   </svg>
-                  Где найти ID матча?
+                  {t('home.howToFindTitle')}
                 </span>
                 <span className="match-form__example">
-                  Пример: <span className="accent">9007760151</span>
+                  {t('home.howToFindExample')} <span className="accent">9007760151</span>
                 </span>
               </div>
 
               <p className="match-form__notice" id="match-form-notice">
-                По ID матча запрашиваются данные у OpenDota. Подробная статистика
-                игроков, разбор линии и наблюдения появятся в следующих задачах.
+                {t('home.howToFindText')}
               </p>
             </form>
           </div>
@@ -200,17 +221,17 @@ export default function HomePage() {
       <section className="features" aria-labelledby="features-title">
         <div className="container">
           <h2 className="section-eyebrow" id="features-title">
-            Планируемые возможности платформы
+            {t('home.featuresTitle')}
           </h2>
           <ul className="features__list">
-            {FEATURES.map((feature) => (
-              <li className="feature" key={feature.title}>
+            {FEATURE_KEYS.map((feature) => (
+              <li className="feature" key={feature.titleKey}>
                 <span className="feature__icon" aria-hidden="true">
                   {feature.icon}
                 </span>
                 <div className="feature__body">
-                  <h3 className="feature__title">{feature.title}</h3>
-                  <p className="feature__text">{feature.text}</p>
+                  <h3 className="feature__title">{t(feature.titleKey)}</h3>
+                  <p className="feature__text">{t(feature.textKey)}</p>
                 </div>
               </li>
             ))}
@@ -222,15 +243,15 @@ export default function HomePage() {
       <section className="steps" aria-labelledby="steps-title">
         <div className="container">
           <h2 className="section-title" id="steps-title">
-            Как это работает?
+            {t('home.stepsTitle')}
           </h2>
           <ol className="steps__list">
             <li className="step panel">
               <div className="step__head">
                 <span className="step__num">1</span>
-                <h3 className="step__title">Введи ID матча</h3>
+                <h3 className="step__title">{t('home.step1.title')}</h3>
               </div>
-              <p className="step__text">Скопируй ID из Dota 2 и вставь на сайт.</p>
+              <p className="step__text">{t('home.step1.text')}</p>
               <div className="mock mock--input" aria-hidden="true">
                 <span className="mock__mark">
                   <svg viewBox="0 0 24 24" width="18" height="18" focusable="false">
@@ -249,9 +270,9 @@ export default function HomePage() {
             <li className="step panel">
               <div className="step__head">
                 <span className="step__num">2</span>
-                <h3 className="step__title">Мы анализируем</h3>
+                <h3 className="step__title">{t('home.step2.title')}</h3>
               </div>
-              <p className="step__text">Получаем данные с OpenDota и анализируем матч.</p>
+              <p className="step__text">{t('home.step2.text')}</p>
               <div className="mock mock--analyze" aria-hidden="true">
                 <span className="mock__search">
                   <svg viewBox="0 0 24 24" width="18" height="18" focusable="false">
@@ -272,9 +293,9 @@ export default function HomePage() {
             <li className="step panel">
               <div className="step__head">
                 <span className="step__num">3</span>
-                <h3 className="step__title">Получай результаты</h3>
+                <h3 className="step__title">{t('home.step3.title')}</h3>
               </div>
-              <p className="step__text">Смотри статистику, наблюдения и рекомендации.</p>
+              <p className="step__text">{t('home.step3.text')}</p>
               <div className="mock mock--result" aria-hidden="true">
                 <span className="mock__avatar">
                   <svg viewBox="0 0 32 32" width="32" height="32" focusable="false">
@@ -305,9 +326,9 @@ export default function HomePage() {
             <li className="step panel">
               <div className="step__head">
                 <span className="step__num">4</span>
-                <h3 className="step__title">Становись лучше</h3>
+                <h3 className="step__title">{t('home.step4.title')}</h3>
               </div>
-              <p className="step__text">Используй рекомендации и улучшай свою игру.</p>
+              <p className="step__text">{t('home.step4.text')}</p>
               <div className="mock mock--growth" aria-hidden="true">
                 <svg viewBox="0 0 120 48" width="120" height="48" focusable="false">
                   <polyline
@@ -327,16 +348,14 @@ export default function HomePage() {
       </section>
 
       {/* ---------- Нижние карточки-разделы ---------- */}
-      <section className="guide" aria-label="Разделы платформы">
+      <section className="guide" aria-label={t('home.guideLabel')}>
         <div className="container">
           <ul className="guide__list">
             <li className="guide-card guide-card--blue">
               <Link className="guide-card__link" to="/heroes">
                 <div className="guide-card__body">
-                  <h3 className="guide-card__title">Персонажи</h3>
-                  <p className="guide-card__text">
-                    Винрейты, пики, предметы и средние показатели.
-                  </p>
+                  <h3 className="guide-card__title">{t('home.guide.heroes.title')}</h3>
+                  <p className="guide-card__text">{t('home.guide.heroes.text')}</p>
                 </div>
                 <span className="guide-card__arrow" aria-hidden="true">
                   ›
@@ -348,13 +367,11 @@ export default function HomePage() {
               <article className="guide-card__static">
                 <div className="guide-card__body">
                   <h3 className="guide-card__title">
-                    Актуальная мета{' '}
-                    <span className="badge badge--warn">Скоро</span>
+                    {t('home.guide.meta.title')}{' '}
+                    <span className="badge badge--warn">{t('home.soon')}</span>
                   </h3>
-                  <p className="guide-card__text">
-                    Следи за трендами и сильными героями текущего патча.
-                  </p>
-                  <p className="guide-card__note">Раздел в разработке — пока без ссылки.</p>
+                  <p className="guide-card__text">{t('home.guide.meta.text')}</p>
+                  <p className="guide-card__note">{t('home.guide.meta.note')}</p>
                 </div>
               </article>
             </li>
@@ -362,10 +379,8 @@ export default function HomePage() {
             <li className="guide-card guide-card--crimson">
               <Link className="guide-card__link" to="/matches/9007760151">
                 <div className="guide-card__body">
-                  <h3 className="guide-card__title">Пример анализа</h3>
-                  <p className="guide-card__text">
-                    Посмотри, как выглядит подробный отчёт по матчу.
-                  </p>
+                  <h3 className="guide-card__title">{t('home.guide.example.title')}</h3>
+                  <p className="guide-card__text">{t('home.guide.example.text')}</p>
                 </div>
                 <span className="guide-card__arrow" aria-hidden="true">
                   ›
@@ -376,8 +391,8 @@ export default function HomePage() {
             <li className="guide-card guide-card--green">
               <Link className="guide-card__link" to="/history">
                 <div className="guide-card__body">
-                  <h3 className="guide-card__title">История матчей</h3>
-                  <p className="guide-card__text">Все твои анализы в одном месте.</p>
+                  <h3 className="guide-card__title">{t('home.guide.history.title')}</h3>
+                  <p className="guide-card__text">{t('home.guide.history.text')}</p>
                 </div>
                 <span className="guide-card__arrow" aria-hidden="true">
                   ›

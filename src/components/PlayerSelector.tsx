@@ -1,5 +1,7 @@
-import { groupPlayers, playerLabel, teamLabel } from '../lib/matchView'
+import { groupPlayers } from '../lib/matchView'
 import type { NormalizedPlayer } from '../types/match'
+import { useI18n } from '../i18n/I18nContext'
+import { playerText, teamText } from '../i18n/viewLabels'
 
 interface PlayerSelectorProps {
   players: NormalizedPlayer[]
@@ -8,18 +10,20 @@ interface PlayerSelectorProps {
 }
 
 /**
- * Выбор участника матча (Task 7).
- * Участники группируются по стороне из `player_slot` (Radiant / Dire / «Команда не определена»);
- * порядок массива для определения стороны не используется.
+ * Выбор участника матча (Task 7, локализация — Task 13).
+ * Участники группируются по стороне из `player_slot` (Radiant / Dire / «команда
+ * не определена»); порядок массива для определения стороны не используется.
  */
 export default function PlayerSelector({ players, selectedSlot, onSelect }: PlayerSelectorProps) {
+  const { t } = useI18n()
+
   if (players.length === 0) {
     return (
       <section className="match-players panel" aria-labelledby="players-title">
         <h2 className="match-section__title" id="players-title">
-          Участники
+          {t('match.players.title')}
         </h2>
-        <p className="stub__text">Данные об участниках отсутствуют.</p>
+        <p className="stub__text">{t('match.players.empty')}</p>
       </section>
     )
   }
@@ -28,13 +32,13 @@ export default function PlayerSelector({ players, selectedSlot, onSelect }: Play
   const groups = [
     { key: 'radiant', title: 'Radiant', items: grouped.radiant },
     { key: 'dire', title: 'Dire', items: grouped.dire },
-    { key: 'unknown', title: 'Команда не определена', items: grouped.unknown },
+    { key: 'unknown', title: t('match.players.unknownTeam'), items: grouped.unknown },
   ].filter((group) => group.items.length > 0)
 
   return (
     <section className="match-players panel" aria-labelledby="players-title">
       <h2 className="match-section__title" id="players-title">
-        Участники
+        {t('match.players.title')}
       </h2>
 
       {groups.map((group) => (
@@ -53,10 +57,10 @@ export default function PlayerSelector({ players, selectedSlot, onSelect }: Play
                     aria-pressed={isSelected}
                     onClick={() => onSelect(player.player_slot)}
                   >
-                    <span className="player-button__label">{playerLabel(player)}</span>
-                    <span className="player-button__team">{teamLabel(player.team)}</span>
+                    <span className="player-button__label">{playerText(t, player)}</span>
+                    <span className="player-button__team">{teamText(t, player.team)}</span>
                     <span className="player-button__state">
-                      {isSelected ? 'Выбран' : '\u00a0'}
+                      {isSelected ? t('match.players.selected') : '\u00a0'}
                     </span>
                   </button>
                 </li>

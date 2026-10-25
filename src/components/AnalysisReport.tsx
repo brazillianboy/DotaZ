@@ -3,6 +3,7 @@ import { useMemo } from 'react'
 import { analyzePlayer } from '../lib/analysisRules'
 import type { PlayerAnalysis } from '../types/analysis'
 import type { NormalizedMatch, NormalizedPlayer } from '../types/match'
+import { useI18n } from '../i18n/I18nContext'
 import EvidenceList from './EvidenceList'
 import RecommendationsList from './RecommendationsList'
 import ReportLimitations from './ReportLimitations'
@@ -19,12 +20,14 @@ interface AnalysisReportProps {
 }
 
 /**
- * Секция анализа выбранного участника (Task 9).
+ * Секция анализа выбранного участника (Task 9, локализация — Task 13).
  *
  * Расчёт выполняется локально из уже загруженных нормализованных данных:
  * при смене игрока дополнительные запросы к OpenDota не выполняются.
+ * Переключение языка не пересчитывает наблюдения — меняется только представление.
  */
 export default function AnalysisReport({ match, player, analysis }: AnalysisReportProps) {
+  const { t } = useI18n()
   const resolved = useMemo(
     () =>
       analysis !== undefined ? analysis : player === null ? null : analyzePlayer(match, player),
@@ -35,16 +38,18 @@ export default function AnalysisReport({ match, player, analysis }: AnalysisRepo
     return (
       <section className="analysis-panel panel" aria-labelledby="analysis-title">
         <h2 className="match-section__title" id="analysis-title">
-          Наблюдения
+          {t('analysis.observationsTitle')}
         </h2>
-        <p className="stub__text">Выберите участника, чтобы увидеть наблюдения по данным матча.</p>
+        <p className="stub__text">{t('analysis.selectPlayer')}</p>
       </section>
     )
   }
 
   return (
     <div className="analysis">
-      <p className="analysis__version">Версия правил анализа: {resolved.rule_version}</p>
+      <p className="analysis__version">
+        {t('analysis.rulesVersion', { version: resolved.rule_version })}
+      </p>
       <EvidenceList observations={resolved.observations} />
       <RecommendationsList
         recommendations={resolved.recommendations}

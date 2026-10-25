@@ -10,6 +10,8 @@
  * Нормализация полного ответа OpenDota — Task 6; здесь ответ передаётся как есть.
  */
 
+import type { MatchIdErrorCode } from '../i18n/errors'
+
 /** Базовый адрес endpoint матча OpenDota. */
 export const OPENDOTA_MATCHES_ENDPOINT = 'https://api.opendota.com/api/matches'
 
@@ -21,29 +23,31 @@ export const MATCH_ID_MAX_DIGITS = 19
 
 export type MatchIdValidation =
   | { ok: true; value: string }
-  | { ok: false; message: string }
+  | { ok: false; message: string; code: MatchIdErrorCode }
 
 /**
  * Валидация ID матча (Task 5): положительное целое, только цифры.
  * ID сохраняется строкой — без числовых преобразований и потери точности.
+ * `code` используется интерфейсом для локализации сообщения (Task 13).
  */
 export function validateMatchId(raw: string): MatchIdValidation {
   const value = raw.trim()
 
   if (value.length === 0) {
-    return { ok: false, message: 'Введите ID матча.' }
+    return { ok: false, code: 'empty', message: 'Введите ID матча.' }
   }
   if (!/^\d+$/.test(value)) {
     return {
       ok: false,
+      code: 'digits',
       message: 'ID матча должен содержать только цифры (положительное целое число).',
     }
   }
   if (/^0+$/.test(value)) {
-    return { ok: false, message: 'ID матча должен быть положительным числом.' }
+    return { ok: false, code: 'positive', message: 'ID матча должен быть положительным числом.' }
   }
   if (value.length > MATCH_ID_MAX_DIGITS) {
-    return { ok: false, message: 'ID матча слишком длинный — проверьте ввод.' }
+    return { ok: false, code: 'tooLong', message: 'ID матча слишком длинный — проверьте ввод.' }
   }
   return { ok: true, value }
 }

@@ -3,6 +3,9 @@ import type { ReactNode } from 'react'
 import { ANALYSIS_RULES_VERSION } from '../lib/analysisRules'
 import type { ReportSaveState } from '../lib/matchReportFlow'
 import { rulesVersionNotice, type MatchReportView } from '../lib/matchReports'
+import { localizeLimitation } from '../i18n/analysisText'
+import { useI18n } from '../i18n/I18nContext'
+import type { TranslationKey } from '../i18n/translations'
 
 interface ReportPersistenceNoticeProps {
   view: MatchReportView
@@ -14,91 +17,73 @@ interface ReportPersistenceNoticeProps {
   retrying?: boolean
 }
 
-/** Отображение времени в UTC без зависимости от локали браузера. */
-function formatTimestamp(value: string | null): string | null {
-  if (value === null) {
-    return null
-  }
-  const parsed = new Date(value)
-  if (Number.isNaN(parsed.getTime())) {
-    return value
-  }
-  return `${parsed.toISOString().slice(0, 16).replace('T', ' ')} UTC`
-}
-
 interface SavePresentation {
-  badge: string
+  badge: TranslationKey
   badgeClass: string
-  summary: string
+  summary: TranslationKey
   alert: string | null
 }
 
 /**
- * Тексты состояния сохранения. Формулировка «сохранено» используется только тогда,
- * когда запись действительно подтверждена базой данных.
+ * Ключи словаря для состояния сохранения. Формулировка «сохранено» используется
+ * только тогда, когда запись действительно подтверждена базой данных.
  */
-function describeSave(save: ReportSaveState, isPartial: boolean): SavePresentation {
+function describeSave(save: ReportSaveState): SavePresentation {
   switch (save.kind) {
     case 'stored':
       return {
-        badge: 'Сохранённый отчёт',
+        badge: 'persistence.stored.badge',
         badgeClass: 'badge badge--ok',
-        summary:
-          'Показан ранее сохранённый личный отчёт: OpenDota не запрашивалась, наблюдения не пересчитывались.',
+        summary: 'persistence.stored.summary',
         alert: null,
       }
     case 'saved':
       return {
-        badge: 'Новый отчёт сохранён',
+        badge: 'persistence.saved.badge',
         badgeClass: 'badge badge--ok',
-        summary: isPartial
-          ? 'Отчёт сформирован и сохранён в личной истории (частичные данные — см. ограничения ниже).'
-          : 'Отчёт сформирован и сохранён в личной истории.',
+        summary: 'persistence.saved.summary',
         alert: null,
       }
     case 'conflict-resolved':
       return {
-        badge: 'Сохранённый отчёт',
+        badge: 'persistence.conflict.badge',
         badgeClass: 'badge badge--ok',
-        summary:
-          'Отчёт уже был сохранён другим запросом: показана существующая запись, вторая строка не создавалась и данные не перезаписаны.',
+        summary: 'persistence.conflict.summary',
         alert: null,
       }
     case 'guest':
       return {
-        badge: 'Гостевой режим',
+        badge: 'persistence.guest.badge',
         badgeClass: 'badge badge--warn',
-        summary:
-          'Отчёт не сохраняется: вы не вошли в аккаунт. Анализ рассчитан из данных OpenDota и показан только на этой странице.',
+        summary: 'persistence.guest.summary',
         alert: null,
       }
     case 'no-database':
       return {
-        badge: 'Сохранение недоступно',
+        badge: 'persistence.noDatabase.badge',
         badgeClass: 'badge badge--warn',
-        summary:
-          'Анализ рассчитан, но личная история недоступна: подключение к базе данных не настроено.',
+        summary: 'persistence.noDatabase.summary',
         alert: save.message,
       }
     case 'database-error':
       return {
-        badge: 'Отчёт не сохранён',
+        badge: 'persistence.failed.badge',
         badgeClass: 'badge badge--warn',
-        summary: 'Отчёт сформирован, но сохранить его не удалось.',
+        summary: 'persistence.failed.summary',
         alert: save.error.message,
       }
     case 'unresolved':
       return {
-        badge: 'Незавершённая запись',
+        badge: 'persistence.unresolved.badge',
         badgeClass: 'badge badge--warn',
-        summary: 'Показан заново рассчитанный отчёт: существующая запись не перезаписывалась.',
+        summary: 'persistence.unresolved.summary',
         alert: save.message,
       }
     case 'save-failed':
       return {
-        badge: 'Отчёт не сохранён',
+        badge: 'persistence.failed.badge',
         badgeClass: 'badge badge--warn',
-        summary: 'Отчёт сформирован, но сохранить его не удалось.',
+        summary: 'persistence.failed.summary',
         alert: save.error.message,
       }
   }
@@ -118,22 +103,27 @@ export default function ReportPersistenceNotice({
   onRetrySave,
   retrying = false,
 }: ReportPersistenceNoticeProps) {
+  const { t, locale, formatDateTime } = useI18n()
   const isPartial = view.status === 'partial'
-  const presentation = describeSave(save, isPartial)
+  const presentation = describeSave(save)
+  const summary =
+    save.kind === 'saved' && isPartial
+      ? t('persistence.saved.summaryPartial')
+      : t(presentation.summary)
   const versionNotice = rulesVersionNotice(view.rulesVersion, ANALYSIS_RULES_VERSION)
-  const fetchedAt = formatTimestamp(view.fetchedAt)
-  const savedAt = formatTimestamp(view.updatedAt ?? view.createdAt)
+  const fetchedAt = formatDateTime(view.fetchedAt)
+  const savedAt = formatDateTime(view.updatedAt ?? view.createdAt)
   const canRetry =
     (save.kind === 'save-failed' || save.kind === 'database-error') && onRetrySave !== undefined
 
   return (
     <section className="report-notice panel" aria-labelledby="report-notice-title">
       <h2 className="match-section__title" id="report-notice-title">
-        Личный отчёт
+        {t('persistence.title')}
       </h2>
 
-      <p className={presentation.badgeClass}>{presentation.badge}</p>
-      <p className="stub__text">{presentation.summary}</p>
+      <p className={presentation.badgeClass}>{t(presentation.badge)}</p>
+      <p className="stub__text">{summary}</p>
 
       {presentation.alert !== null && (
         <p className="auth-alert auth-alert--error" role="alert">
@@ -143,28 +133,29 @@ export default function ReportPersistenceNotice({
 
       {save.kind === 'guest' && loginLink !== undefined && (
         <>
-          <p className="stub__text">Чтобы отчёт сохранялся в личную историю, войдите в аккаунт.</p>
+          <p className="stub__text">{t('persistence.guest.loginHint')}</p>
           <p>{loginLink}</p>
         </>
       )}
 
       {isPartial && (
         <p className="report-notice__note" role="note">
-          Частичный отчёт: часть данных провайдера недоступна — сохранены только подтверждённые
-          значения (отсутствующие показатели остаются пустыми).
+          {t('persistence.partialNote')}
         </p>
       )}
 
       <ul className="stub__list">
         <li>
-          Версия правил анализа: <strong>{view.rulesVersion}</strong>
+          {t('persistence.rulesVersionLabel')} <strong>{view.rulesVersion}</strong>
         </li>
         <li>
-          Источник данных: <strong>{view.source}</strong>
+          {t('persistence.sourceLabel')} <strong>{view.source}</strong>
         </li>
-        {fetchedAt !== null && <li>Данные OpenDota получены: {fetchedAt}</li>}
-        {view.id !== null && savedAt !== null && <li>Отчёт сохранён: {savedAt}</li>}
-        {view.id !== null && <li>Идентификатор отчёта: {view.id}</li>}
+        {fetchedAt !== null && <li>{t('persistence.fetchedAt', { value: fetchedAt })}</li>}
+        {view.id !== null && savedAt !== null && (
+          <li>{t('persistence.savedAt', { value: savedAt })}</li>
+        )}
+        {view.id !== null && <li>{t('persistence.reportId', { id: view.id })}</li>}
       </ul>
 
       {versionNotice !== null && (
@@ -175,10 +166,10 @@ export default function ReportPersistenceNotice({
 
       {view.limitations.length > 0 && (
         <div className="report-notice__limitations">
-          <h3 className="report-notice__subtitle">Ограничения сохранённых данных</h3>
+          <h3 className="report-notice__subtitle">{t('persistence.limitationsTitle')}</h3>
           <ul className="stub__list">
             {view.limitations.map((limitation) => (
-              <li key={limitation.code}>{limitation.text}</li>
+              <li key={limitation.code}>{localizeLimitation(limitation, locale).text}</li>
             ))}
           </ul>
         </div>
@@ -187,7 +178,7 @@ export default function ReportPersistenceNotice({
       {canRetry && (
         <div className="stub__actions">
           <button type="button" className="btn btn--primary" onClick={onRetrySave} disabled={retrying}>
-            {retrying ? 'Сохраняем…' : 'Повторить сохранение'}
+            {retrying ? t('persistence.retrying') : t('persistence.retry')}
           </button>
         </div>
       )}

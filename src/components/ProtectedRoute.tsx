@@ -2,19 +2,20 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 
 import { useAuth } from '../hooks/useAuth'
+import { useI18n } from '../i18n/I18nContext'
 
 interface ProtectedRouteProps {
   children: ReactNode
 }
 
 /**
- * Защита приватных маршрутов (Task 4).
+ * Защита приватных маршрутов (Task 4, локализация — Task 13).
  *
  * Состояния:
  *  A. идёт инициализация аутентификации (`loading`) — показываем статус
- *     «Проверка авторизации…», приватный контент не рендерим и не редиректим
- *     (иначе авторизованный пользователь после перезагрузки страницы был бы
- *     преждевременно отправлен на `/login`);
+ *     «Проверка авторизации…» (локализуется), приватный контент не рендерим и
+ *     не редиректим (иначе авторизованный пользователь после перезагрузки
+ *     страницы был бы преждевременно отправлен на `/login`);
  *  B. сессия подтверждена (`user`) — рендерим защищённую страницу;
  *  C/D. сессия не подтверждена (нет пользователя, ошибка инициализации,
  *     отсутствие конфигурации Supabase) — fail closed: редирект на `/login`
@@ -28,6 +29,7 @@ interface ProtectedRouteProps {
  */
 export default function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, loading } = useAuth()
+  const { t } = useI18n()
   const location = useLocation()
 
   if (loading) {
@@ -35,11 +37,10 @@ export default function ProtectedRoute({ children }: ProtectedRouteProps) {
       <section className="stub" aria-busy="true">
         <div className="container">
           <div className="stub__panel panel">
-            <span className="badge badge--warn">Проверка доступа</span>
-            <h1 className="stub__title">Проверка авторизации…</h1>
+            <span className="badge badge--warn">{t('auth.guard.badge')}</span>
+            <h1 className="stub__title">{t('auth.guard.title')}</h1>
             <p className="stub__text" role="status" aria-live="polite">
-              Проверяем вашу сессию. Если вход выполнен, приватный раздел
-              откроется автоматически.
+              {t('auth.guard.text')}
             </p>
           </div>
         </div>

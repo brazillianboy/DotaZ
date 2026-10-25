@@ -2,23 +2,30 @@ import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuth } from '../hooks/useAuth'
+import { useI18n } from '../i18n/I18nContext'
+import { authErrorText, type AuthErrorCode } from '../i18n/errors'
 
 type SuccessState = 'check-email' | 'signed-in' | null
 
 /**
- * Регистрация по email и паролю (Task 3, supabase.auth.signUp).
+ * Регистрация по email и паролю (Task 3, локализация — Task 13).
  *
  * Поддерживаются оба режима Supabase:
  *  - подтверждение email включено  → success 'check-email' (активной сессии нет);
  *  - подтверждение email отключено → success 'signed-in' (сессия активна сразу).
+ *
+ * Сообщение о результате регистрации не перечисляет существующие аккаунты —
+ * формулировка одинакова и в русской, и в английской версии.
  */
 export default function RegisterPage() {
   const { signUp, user, loading, isConfigured } = useAuth()
+  const { t } = useI18n()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [passwordConfirm, setPasswordConfirm] = useState('')
   const [error, setError] = useState<string | null>(null)
+  const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [success, setSuccess] = useState<SuccessState>(null)
 
@@ -28,17 +35,18 @@ export default function RegisterPage() {
       return
     }
     setError(null)
+    setErrorCode(null)
 
     if (!email.trim()) {
-      setError('Укажите email.')
+      setError(t('auth.error.emailRequired'))
       return
     }
     if (!password) {
-      setError('Укажите пароль.')
+      setError(t('auth.error.passwordRequired'))
       return
     }
     if (password !== passwordConfirm) {
-      setError('Пароли не совпадают.')
+      setError(t('auth.error.passwordMismatch'))
       return
     }
 
@@ -47,7 +55,8 @@ export default function RegisterPage() {
     setSubmitting(false)
 
     if (!result.ok) {
-      setError(result.error)
+      setErrorCode(result.errorCode)
+      setError(authErrorText(t, result.errorCode, result.error))
       return
     }
 
@@ -58,23 +67,21 @@ export default function RegisterPage() {
     <section className="stub">
       <div className="container">
         <div className="stub__panel panel auth-panel">
-          <h1 className="stub__title">Регистрация</h1>
+          <h1 className="stub__title">{t('auth.registerTitle')}</h1>
 
           {loading && (
             <p className="stub__text" role="status" aria-live="polite">
-              Проверяем сессию…
+              {t('auth.checkingSession')}
             </p>
           )}
 
           {!loading && !isConfigured && (
             <>
               <p className="auth-alert auth-alert--error" role="alert">
-                Регистрация недоступна: Supabase не настроен. Добавьте
-                VITE_SUPABASE_URL и VITE_SUPABASE_PUBLISHABLE_KEY в локальный
-                .env (см. .env.example) и перезапустите dev-сервер.
+                {t('auth.notConfiguredRegister')}
               </p>
               <Link className="btn btn--ghost" to="/">
-                ← Вернуться на главную
+                {t('common.backHome')}
               </Link>
             </>
           )}
@@ -82,10 +89,10 @@ export default function RegisterPage() {
           {!loading && isConfigured && user && (
             <>
               <p className="auth-alert auth-alert--success" role="status">
-                Вы уже вошли в аккаунт ({user.email}) — регистрация не требуется.
+                {t('auth.alreadyLoggedInNoRegister', { email: user.email ?? '' })}
               </p>
               <Link className="btn btn--primary" to="/">
-                Перейти на главную
+                {t('common.goHome')}
               </Link>
             </>
           )}
@@ -93,14 +100,11 @@ export default function RegisterPage() {
           {!loading && isConfigured && !user && success === 'check-email' && (
             <>
               <div className="auth-alert auth-alert--success" role="status">
-                <h2 className="auth-alert__title">Проверьте электронную почту</h2>
-                <p>
-                  Если регистрация доступна для этого адреса, вы получите письмо с
-                  дальнейшими инструкциями. Если у вас уже есть аккаунт, попробуйте войти.
-                </p>
+                <h2 className="auth-alert__title">{t('auth.checkEmailTitle')}</h2>
+                <p>{t('auth.checkEmailText')}</p>
               </div>
               <Link className="btn btn--primary" to="/login">
-                Перейти ко входу
+                {t('auth.goToLogin')}
               </Link>
             </>
           )}
@@ -108,10 +112,10 @@ export default function RegisterPage() {
           {!loading && isConfigured && !user && success === 'signed-in' && (
             <>
               <p className="auth-alert auth-alert--success" role="status">
-                Аккаунт создан — вы вошли в систему.
+                {t('auth.signedIn')}
               </p>
               <Link className="btn btn--primary" to="/">
-                Перейти на главную
+                {t('common.goHome')}
               </Link>
             </>
           )}
@@ -120,13 +124,13 @@ export default function RegisterPage() {
             <form className="auth-form" onSubmit={handleSubmit} noValidate>
               {error && (
                 <p className="auth-alert auth-alert--error" role="alert">
-                  {error}
+                  {errorCode === null ? error : authErrorText(t, errorCode, error)}
                 </p>
               )}
 
               <div className="auth-field">
                 <label className="auth-label" htmlFor="register-email">
-                  Email
+                  {t('auth.emailLabel')}
                 </label>
                 <input
                   className="auth-input"
@@ -134,7 +138,7 @@ export default function RegisterPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
-                  placeholder="you@example.com"
+                  placeholder={t('auth.emailPlaceholder')}
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
                   disabled={submitting}
@@ -144,7 +148,7 @@ export default function RegisterPage() {
 
               <div className="auth-field">
                 <label className="auth-label" htmlFor="register-password">
-                  Пароль
+                  {t('auth.passwordLabel')}
                 </label>
                 <input
                   className="auth-input"
@@ -152,7 +156,7 @@ export default function RegisterPage() {
                   name="password"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="••••••••"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={password}
                   onChange={(event) => setPassword(event.target.value)}
                   disabled={submitting}
@@ -162,7 +166,7 @@ export default function RegisterPage() {
 
               <div className="auth-field">
                 <label className="auth-label" htmlFor="register-password-confirm">
-                  Повторите пароль
+                  {t('auth.passwordConfirmLabel')}
                 </label>
                 <input
                   className="auth-input"
@@ -170,7 +174,7 @@ export default function RegisterPage() {
                   name="passwordConfirm"
                   type="password"
                   autoComplete="new-password"
-                  placeholder="••••••••"
+                  placeholder={t('auth.passwordPlaceholder')}
                   value={passwordConfirm}
                   onChange={(event) => setPasswordConfirm(event.target.value)}
                   disabled={submitting}
@@ -179,11 +183,11 @@ export default function RegisterPage() {
               </div>
 
               <button type="submit" className="btn btn--primary auth-submit" disabled={submitting}>
-                {submitting ? 'Создаём аккаунт…' : 'Зарегистрироваться'}
+                {submitting ? t('auth.submittingRegister') : t('auth.submitRegister')}
               </button>
 
               <p className="auth-hint">
-                Уже есть аккаунт? <Link to="/login">Войдите</Link>.
+                {t('auth.haveAccountHint')} <Link to="/login">{t('auth.loginLink')}</Link>.
               </p>
             </form>
           )}

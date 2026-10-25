@@ -2,13 +2,16 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import type { EmailOtpType, SupabaseClient } from '@supabase/supabase-js'
 
-import { mapAuthError } from '../lib/authErrors'
+import { mapAuthErrorCode } from '../lib/authErrors'
 import { getSupabase } from '../lib/supabase'
+import { useI18n } from '../i18n/I18nContext'
+import { authErrorText, type AuthErrorCode } from '../i18n/errors'
+import type { TranslationKey } from '../i18n/translations'
 
 type ConfirmStatus = 'pending' | 'success' | 'error'
 
 /**
- * Callback подтверждения email (Task 3, маршрут `/auth/confirm`).
+ * Callback подтверждения email (Task 3, локализация — Task 13, маршрут `/auth/confirm`).
  *
  * Поддерживаются стандартные механизмы Supabase Auth (по одному за раз,
  * в зависимости от шаблона письма проекта):
@@ -21,8 +24,11 @@ type ConfirmStatus = 'pending' | 'success' | 'error'
  */
 export default function AuthConfirmPage() {
   const [searchParams] = useSearchParams()
+  const { t } = useI18n()
   const [status, setStatus] = useState<ConfirmStatus>('pending')
-  const [message, setMessage] = useState('Выполняем подтверждение аккаунта…')
+  const [messageKey, setMessageKey] = useState<TranslationKey>('auth.confirm.pending')
+  const [authCode, setAuthCode] = useState<AuthErrorCode | null>(null)
+  const message = authCode === null ? t(messageKey) : authErrorText(t, authCode)
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -34,16 +40,14 @@ export default function AuthConfirmPage() {
     const supabase = getSupabase()
     if (!supabase) {
       setStatus('error')
-      setMessage(
-        'Подтверждение недоступно: Supabase не настроен. Проверьте переменные окружения приложения.',
-      )
+      setMessageKey('auth.confirm.notConfigured')
       return
     }
 
     const errorParam = searchParams.get('error_description') ?? searchParams.get('error')
     if (errorParam) {
       setStatus('error')
-      setMessage('Ссылка подтверждения недействительна или устарела. Запросите новое письмо.')
+      setMessageKey('auth.confirm.invalidLink')
       return
     }
 
@@ -57,7 +61,7 @@ export default function AuthConfirmPage() {
           const { error } = await client.auth.exchangeCodeForSession(code)
           if (error) {
             setStatus('error')
-            setMessage(mapAuthError(error))
+            setAuthCode(mapAuthErrorCode(error))
             return
           }
         } else if (tokenHash && type) {
@@ -67,7 +71,7 @@ export default function AuthConfirmPage() {
           })
           if (error) {
             setStatus('error')
-            setMessage(mapAuthError(error))
+            setAuthCode(mapAuthErrorCode(error))
             return
           }
         } else if (window.location.hash.includes('access_token')) {
@@ -75,20 +79,20 @@ export default function AuthConfirmPage() {
           const { data } = await client.auth.getSession()
           if (!data.session) {
             setStatus('error')
-            setMessage('Не удалось обработать данные подтверждения. Запросите новое письмо.')
+            setMessageKey('auth.confirm.hashFailed')
             return
           }
         } else {
           setStatus('error')
-          setMessage('Ссылка подтверждения не содержит данных. Запросите новое письмо.')
+          setMessageKey('auth.confirm.missingData')
           return
         }
 
         setStatus('success')
-        setMessage('Email подтверждён — аккаунт активирован. Теперь вы можете войти.')
+        setMessageKey('auth.confirm.success')
       } catch (error) {
         setStatus('error')
-        setMessage(mapAuthError(error))
+        setAuthCode(mapAuthErrorCode(error))
       }
     }
 
@@ -99,7 +103,7 @@ export default function AuthConfirmPage() {
     <section className="stub">
       <div className="container">
         <div className="stub__panel panel auth-panel">
-          <h1 className="stub__title">Подтверждение email</h1>
+          <h1 className="stub__title">{t('auth.confirm.title')}</h1>
 
           {status === 'pending' && (
             <p className="stub__text" role="status" aria-live="polite">
@@ -113,7 +117,7 @@ export default function AuthConfirmPage() {
                 {message}
               </p>
               <Link className="btn btn--primary" to="/login">
-                Перейти ко входу
+                {t('auth.goToLogin')}
               </Link>
             </>
           )}
@@ -124,7 +128,7 @@ export default function AuthConfirmPage() {
                 {message}
               </p>
               <Link className="btn btn--ghost" to="/login">
-                Перейти ко входу
+                {t('auth.goToLogin')}
               </Link>
             </>
           )}

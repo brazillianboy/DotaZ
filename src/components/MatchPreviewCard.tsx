@@ -1,15 +1,19 @@
 import { Link } from 'react-router-dom'
 
+import { useI18n } from '../i18n/I18nContext'
+
 /**
  * Статическая карточка-превью матча для hero-секции (Task 2).
  * Все числа — демонстрационные, зашитые в разметку для показа дизайна.
  * Данные НЕ получены из OpenDota и не являются подтверждённым матчем.
  */
 export default function MatchPreviewCard() {
+  const { t } = useI18n()
+
   return (
-    <aside className="preview-card" aria-label="Пример карточки матча — дизайн-превью с демонстрационными данными">
+    <aside className="preview-card" aria-label={t('home.preview.aria')}>
       <div className="preview-card__badge">
-        <span className="badge badge--warn">Дизайн-превью</span>
+        <span className="badge badge--warn">{t('home.preview.badge')}</span>
       </div>
       <div className="preview-card__head">
         <span className="preview-card__hero" aria-hidden="true">
@@ -77,11 +81,9 @@ export default function MatchPreviewCard() {
       </div>
 
       <Link className="preview-card__link" to="/matches/9007760151">
-        Посмотреть пример анализа →
+        {t('home.preview.link')}
       </Link>
-      <p className="preview-card__note">
-        Демонстрационные данные, не из OpenDota.
-      </p>
+      <p className="preview-card__note">{t('home.preview.note')}</p>
     </aside>
   )
 }
