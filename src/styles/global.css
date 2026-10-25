@@ -202,6 +202,12 @@ input {
   color: #ffc069;
 }
 
+.badge--ok {
+  border-color: rgba(94, 219, 155, 0.45);
+  background: rgba(94, 219, 155, 0.12);
+  color: #7ee2b0;
+}
+
 .panel {
   background: var(--bg-panel);
   border: 1px solid var(--border-subtle);

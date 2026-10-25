@@ -228,6 +228,32 @@
   color: #7e8ca3;
 }
 
+/* Состояние личного отчёта (Task 11) */
+.report-notice {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+}
+
+.report-notice__note {
+  font-size: 13px;
+  line-height: 1.55;
+  color: #ffc069;
+}
+
+.report-notice__subtitle {
+  margin-bottom: 6px;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-muted, #93a1b8);
+}
+
+.report-notice__limitations {
+  border-top: 1px solid var(--border-subtle);
+  padding-top: 12px;
+}
+
 .observations {
   display: flex;
   flex-direction: column;

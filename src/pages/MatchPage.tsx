@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import AnalysisReport from '../components/AnalysisReport'
@@ -6,92 +6,198 @@ import MatchSummary from '../components/MatchSummary'
 import LaneReport from '../components/LaneReport'
 import PlayerSelector from '../components/PlayerSelector'
 import PlayerStats from '../components/PlayerStats'
-import { findPlayerBySlot, pickDefaultPlayerSlot } from '../lib/matchView'
-import { normalizeMatch } from '../lib/normalizeMatch'
+import ReportPersistenceNotice from '../components/ReportPersistenceNotice'
+import { useAuth } from '../hooks/useAuth'
 import {
-  fetchMatchById,
-  isRetryableError,
-  validateMatchId,
-  type OpenDotaError,
-} from '../lib/opendota'
-import type { NormalizedMatch } from '../types/match'
+  loadOrCreatePersonalReport,
+  retrySaveReport,
+  type MatchReportFlowDeps,
+  type MatchReportFlowPhase,
+  type ReportSaveState,
+} from '../lib/matchReportFlow'
+import {
+  createMatchReportsService,
+  findStoredPlayerAnalysis,
+  type MatchReportView,
+} from '../lib/matchReports'
+import { createSupabaseMatchReportsClient } from '../lib/matchReportsSupabase'
+import { findPlayerBySlot, pickDefaultPlayerSlot } from '../lib/matchView'
+import { fetchMatchById, isRetryableError, validateMatchId, type OpenDotaError } from '../lib/opendota'
+import { getSupabase } from '../lib/supabase'
 
 type MatchState =
   | { status: 'loading' }
   | { status: 'invalid'; message: string }
-  | { status: 'success'; match: NormalizedMatch; requestedId: string }
+  | { status: 'report'; view: MatchReportView; save: ReportSaveState }
+  | { status: 'report-error'; message: string }
   | { status: 'error'; error: OpenDotaError }
 
+/** Тексты шагов работы (Task 11): видно, что именно выполняется сейчас. */
+const PHASE_TEXT: Record<MatchReportFlowPhase, string> = {
+  'checking-report': 'Проверяем сохранённый отчёт…',
+  'fetching-match': 'Запрашиваем данные матча у OpenDota…',
+  analyzing: 'Формируем наблюдения по всем участникам…',
+  saving: 'Сохраняем отчёт в личную историю…',
+}
+
 /**
- * Страница матча (Tasks 5–7): получает матч из OpenDota по параметру маршрута,
- * нормализует ответ (Task 6) и показывает сводку матча с выбором участника (Task 7).
+ * Страница матча (Tasks 5–11).
  *
- * Поддерживаются прямой переход по URL, обновление страницы и навигация.
- * Выбор игрока хранится в локальном состоянии и не вызывает новых запросов.
+ * Порядок работы:
+ *  1) валидация ID матча (Task 5);
+ *  2) ожидание достоверного состояния сессии Supabase (Task 3);
+ *  3) поиск сохранённого личного отчёта (Task 11) — при наличии он используется
+ *     без обращения к OpenDota и без пересчёта правил;
+ *  4) иначе — получение матча у OpenDota (Task 5), нормализация (Task 6),
+ *     анализ всех участников (Task 9) и сохранение одного личного отчёта;
+ *  5) выбор участника остаётся локальным состоянием: он не вызывает ни запросов,
+ *     ни записей в базу.
  */
 export default function MatchPage() {
   const { matchId } = useParams<{ matchId: string }>()
+  const { user, loading: authLoading, isConfigured } = useAuth()
   const [attempt, setAttempt] = useState(0)
   const [state, setState] = useState<MatchState>({ status: 'loading' })
+  const [phase, setPhase] = useState<MatchReportFlowPhase | null>(null)
   // Устойчивый идентификатор выбранного участника — player_slot.
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
+  const [retrying, setRetrying] = useState(false)
+
+  /** Достоверное состояние сессии: пока сессия восстанавливается, работать нельзя. */
+  const authStatus = authLoading ? 'loading' : user !== null ? 'authenticated' : 'anonymous'
+
+  const service = useMemo(() => {
+    const supabase = getSupabase()
+    return supabase === null
+      ? null
+      : createMatchReportsService(createSupabaseMatchReportsClient(supabase))
+  }, [isConfigured])
+
+  const flowDeps = useMemo<Omit<MatchReportFlowDeps, 'onPhase'>>(
+    () => ({
+      authStatus,
+      userId: user?.id ?? null,
+      service,
+      fetchMatch: fetchMatchById,
+      now: () => new Date(),
+    }),
+    [authStatus, user?.id, service],
+  )
 
   useEffect(() => {
     const validation = validateMatchId(matchId ?? '')
     if (!validation.ok) {
       setState({ status: 'invalid', message: validation.message })
       setSelectedSlot(null)
+      setPhase(null)
+      return
+    }
+
+    // Пока состояние сессии не восстановлено, ни чтение, ни запись не выполняются.
+    if (authStatus === 'loading') {
+      setState({ status: 'loading' })
+      setPhase(null)
       return
     }
 
     const controller = new AbortController()
-    // Смена матча: прежние данные и выбранный игрок не показываются.
+    let active = true
+    // Смена матча: прежние данные, выбранный игрок и состояние сохранения сбрасываются.
     setState({ status: 'loading' })
     setSelectedSlot(null)
+    setPhase('checking-report')
+    setRetrying(false)
 
-    fetchMatchById(validation.value, controller.signal).then((result) => {
+    loadOrCreatePersonalReport(
+      {
+        ...flowDeps,
+        onPhase: (next) => {
+          if (active) {
+            setPhase(next)
+          }
+        },
+      },
+      validation.value,
+      controller.signal,
+    ).then((result) => {
       // Устаревшие и отменённые ответы не применяем.
-      if (controller.signal.aborted) {
+      if (!active || controller.signal.aborted || result.status === 'aborted') {
         return
       }
-      if (result.ok) {
-        // Нормализация выполняется сразу после успешного получения данных (Task 6).
-        const match = normalizeMatch(result.match)
-        setState({
-          status: 'success',
-          match,
-          requestedId: validation.value,
-        })
-        // По умолчанию выбирается первый доступный участник нового матча.
-        setSelectedSlot(pickDefaultPlayerSlot(match.players))
+      if (result.status === 'waiting-auth') {
+        setPhase(null)
         return
       }
-      if (result.error.kind === 'aborted') {
+      if (result.status === 'provider-error') {
+        setPhase(null)
+        setState({ status: 'error', error: result.error })
         return
       }
-      setState({ status: 'error', error: result.error })
+      if (result.status === 'invalid-stored-report') {
+        setPhase(null)
+        setState({ status: 'report-error', message: result.message })
+        return
+      }
+      setPhase(null)
+      setState({ status: 'report', view: result.view, save: result.save })
+      // По умолчанию выбирается первый доступный участник нового матча.
+      setSelectedSlot(pickDefaultPlayerSlot(result.view.match.players))
     })
 
     // Отмена запроса при уходе со страницы или смене маршрута.
-    return () => controller.abort()
-  }, [matchId, attempt])
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [matchId, attempt, authStatus, flowDeps])
 
   const retry = useCallback(() => {
     setAttempt((value) => value + 1)
   }, [])
 
+  /** Повторное сохранение уже сформированного отчёта — без нового запроса к OpenDota. */
+  const handleRetrySave = useCallback(() => {
+    if (state.status !== 'report') {
+      return
+    }
+    const view = state.view
+    setRetrying(true)
+    retrySaveReport(flowDeps, view)
+      .then((result) => {
+        setState({ status: 'report', view: result.view, save: result.save })
+      })
+      .finally(() => {
+        setRetrying(false)
+      })
+  }, [flowDeps, state])
+
   const selectedPlayer =
-    state.status === 'success' ? findPlayerBySlot(state.match.players, selectedSlot) : null
+    state.status === 'report' ? findPlayerBySlot(state.view.match.players, selectedSlot) : null
+
+  // Сохранённые наблюдения из снимка отчёта: правила заново не пересчитываются.
+  const selectedAnalysis =
+    state.status === 'report' ? findStoredPlayerAnalysis(state.view, selectedSlot) : null
 
   return (
     <section className="stub" aria-busy={state.status === 'loading'}>
       <div className="container">
-        {state.status === 'success' ? (
+        {state.status === 'report' ? (
           <div className="match-details">
-            <MatchSummary match={state.match} requestedId={state.requestedId} />
+            <MatchSummary match={state.view.match} requestedId={state.view.matchId} />
+            <ReportPersistenceNotice
+              view={state.view}
+              save={state.save}
+              loginLink={
+                <Link className="btn btn--ghost" to="/login">
+                  Войти в аккаунт
+                </Link>
+              }
+              onRetrySave={handleRetrySave}
+              retrying={retrying}
+            />
             <div className="match-details__columns">
               <PlayerSelector
-                players={state.match.players}
+                players={state.view.match.players}
                 selectedSlot={selectedSlot}
                 onSelect={setSelectedSlot}
               />
@@ -100,7 +206,11 @@ export default function MatchPage() {
                 <LaneReport player={selectedPlayer} />
               </div>
             </div>
-            <AnalysisReport match={state.match} player={selectedPlayer} />
+            <AnalysisReport
+              match={state.view.match}
+              player={selectedPlayer}
+              analysis={selectedAnalysis}
+            />
             <Link className="btn btn--ghost" to="/">
               ← Вернуться на главную
             </Link>
@@ -114,7 +224,7 @@ export default function MatchPage() {
                 Матч <span className="accent">{matchId}</span>
               </h1>
               <p className="stub__text" role="status" aria-live="polite">
-                Запрашиваем данные матча у OpenDota…
+                {phase === null ? 'Проверяем состояние сессии…' : PHASE_TEXT[phase]}
               </p>
             </>
           )}
@@ -160,6 +270,28 @@ export default function MatchPage() {
                     Повторить запрос
                   </button>
                 )}
+                <Link className="btn btn--ghost" to="/">
+                  ← Вернуться на главную
+                </Link>
+              </div>
+            </>
+          )}
+
+          {state.status === 'report-error' && (
+            <>
+              <span className="badge badge--warn">Сохранённый отчёт недоступен</span>
+              <h1 className="stub__title">
+                Не удалось показать сохранённый отчёт по матчу{' '}
+                <span className="accent">{matchId}</span>
+              </h1>
+              <p className="auth-alert auth-alert--error" role="alert">
+                {state.message}
+              </p>
+              <p className="stub__text">
+                Запись в базе данных не изменялась: повреждённый или неизвестный формат отчёта
+                не перезаписывается автоматически, новый отчёт для этого матча не создавался.
+              </p>
+              <div className="stub__actions">
                 <Link className="btn btn--ghost" to="/">
                   ← Вернуться на главную
                 </Link>
