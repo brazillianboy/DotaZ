@@ -254,6 +254,102 @@
   padding-top: 12px;
 }
 
+/* История анализов (Task 12) */
+.history-page__head {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.history-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.history-card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 18px 20px;
+  /* Защита от горизонтального переполнения на узких экранах. */
+  min-width: 0;
+}
+
+.history-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.history-card__title {
+  font-size: 17px;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.history-card__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  font-size: 13.5px;
+}
+
+.history-card__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+}
+
+.history-card__row dt {
+  color: var(--text-secondary);
+}
+
+.history-card__row dd {
+  margin: 0;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.history-card__action {
+  align-self: flex-start;
+}
+
+.history-card__state {
+  font-size: 13px;
+  line-height: 1.5;
+  color: #ffc069;
+}
+
+.history__note {
+  margin-top: 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.history__more {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+@media (max-width: 480px) {
+  .history-list {
+    grid-template-columns: 1fr;
+  }
+}
+
 .observations {
   display: flex;
   flex-direction: column;
