@@ -63,6 +63,25 @@ export function createSupabaseMatchReportsClient(supabase: SupabaseClient): Matc
         .maybeSingle()
       return { data: data ?? null, error: toReportDbError(error) }
     },
+
+    /**
+     * Обновление собственной строки отчёта.
+     *
+     * Обновляемые поля не содержат `user_id` и `match_id`: эти колонки задаются
+     * только в фильтре, поэтому строку нельзя «перенести» другому пользователю или
+     * на другой матч. Дополнительно работает RLS `match_reports_update_own`.
+     */
+    async updatePersonalReport(payload: MatchReportInsert) {
+      const { user_id, match_id, ...fields } = payload
+      const { data, error } = await supabase
+        .from(MATCH_REPORTS_TABLE)
+        .update(fields)
+        .eq('user_id', user_id)
+        .eq('match_id', match_id)
+        .select(MATCH_REPORT_COLUMNS)
+        .maybeSingle()
+      return { data: data ?? null, error: toReportDbError(error) }
+    },
   }
 }
 

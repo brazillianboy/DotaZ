@@ -598,3 +598,83 @@
     padding: 24px;
   }
 }
+
+/* ---------- Собранные предметы за матч (post-MVP) ---------- */
+
+.match-items__subject {
+  margin: 0 0 4px;
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.items-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.item-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 168px;
+  max-width: 100%;
+  padding: 8px 12px 8px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.item-chip__icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  width: 40px;
+  height: 40px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.item-chip__image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+}
+
+.item-chip__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.item-chip__name {
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 14px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-chip__time {
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 520px) {
+  .items-list {
+    gap: 8px;
+  }
+
+  .item-chip {
+    min-width: 0;
+    flex: 1 1 100%;
+  }
+}

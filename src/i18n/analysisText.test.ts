@@ -26,9 +26,9 @@ const RAW_WITH_LANING = {
   kills: 16,
   deaths: 3,
   assists: 15,
-  lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47],
-  gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864],
-  xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907],
+  lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47, 53, 57, 62, 70, 86],
+  gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864, 4191, 4520, 4890, 5300, 5860],
+  xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907, 3201, 3501, 3820, 4150, 4512],
   kills_log: [{ time: 102, key: 'npc_dota_hero_dark_seer' }],
   deaths_log: [{ time: 186, key: 'npc_dota_neutral' }],
   purchase_log: [{ time: 120, key: 'boots' }],
@@ -46,7 +46,7 @@ function observationByRule(ruleId: string): AnalysisObservation {
 }
 
 describe('Шаблоны наблюдений известных правил', () => {
-  it('содержат шаблоны для всех семи правил версии 1.0.0', () => {
+  it('содержат шаблоны для всех семи правил текущей версии (интервал 15 минут)', () => {
     const ruleIds = Object.values(ANALYSIS_RULE_IDS)
     expect(ruleIds).toHaveLength(7)
     for (const ruleId of ruleIds) {
@@ -54,7 +54,21 @@ describe('Шаблоны наблюдений известных правил', 
       expect(OBSERVATION_TEMPLATES[ruleId].ru.length).toBeGreaterThan(0)
       expect(OBSERVATION_TEMPLATES[ruleId].en.length).toBeGreaterThan(0)
     }
-    expect(Object.keys(OBSERVATION_TEMPLATES)).toHaveLength(7)
+    // 7 правил текущей версии + 5 правил версии 1.0.0 (10 минут) для старых отчётов.
+    expect(Object.keys(OBSERVATION_TEMPLATES)).toHaveLength(12)
+  })
+
+  it('сохраняют шаблоны правил версии 1.0.0 (интервал 10 минут)', () => {
+    for (const legacyRuleId of [
+      'laning.last_hits_at_10',
+      'laning.kills_deaths_first_10',
+      'laning.gold_at_10',
+      'laning.xp_at_10',
+      'laning.purchases_first_10',
+    ]) {
+      expect(isKnownRule(legacyRuleId), legacyRuleId).toBe(true)
+      expect(OBSERVATION_TEMPLATES[legacyRuleId].en).toMatch(/10:00|ten minutes/)
+    }
   })
 
   it('не знает правил вне утверждённого набора', () => {
@@ -73,16 +87,16 @@ describe('Шаблоны наблюдений известных правил', 
 
 describe('Локализация наблюдений', () => {
   it('сохраняет русский текст сохранённого наблюдения без изменений', () => {
-    const observation = observationByRule(ANALYSIS_RULE_IDS.lastHitsAt10)
-    expect(localizeObservation(observation, 'ru').text).toBe('Добивания к 10:00 (lh_t[10]) — 47.')
+    const observation = observationByRule(ANALYSIS_RULE_IDS.lastHitsAt15)
+    expect(localizeObservation(observation, 'ru').text).toBe('Добивания к 15:00 (lh_t[15]) — 86.')
   })
 
   it('переводит известное правило на английский, сохраняя значения', () => {
-    const observation = observationByRule(ANALYSIS_RULE_IDS.lastHitsAt10)
+    const observation = observationByRule(ANALYSIS_RULE_IDS.lastHitsAt15)
     const localized = localizeObservation(observation, 'en')
     expect(localized.localized).toBe(true)
-    expect(localized.text).toBe('Last hits at 10:00 (lh_t[10]) — 47.')
-    expect(localized.text).toContain('lh_t[10]')
+    expect(localized.text).toBe('Last hits at 15:00 (lh_t[15]) — 86.')
+    expect(localized.text).toContain('lh_t[15]')
   })
 
   it('переводит K/D/A, используя значения из подтверждений', () => {
@@ -105,7 +119,7 @@ describe('Локализация наблюдений', () => {
   })
 
   it('сохраняет значения evidence и не мутирует наблюдение', () => {
-    const observation = observationByRule(ANALYSIS_RULE_IDS.goldAt10)
+    const observation = observationByRule(ANALYSIS_RULE_IDS.goldAt15)
     const before = JSON.stringify(observation)
     localizeObservation(observation, 'en')
     localizeObservation(observation, 'ru')
@@ -117,11 +131,11 @@ describe('Локализация наблюдений', () => {
       rule_id: 'laning.legacy_rule',
       player_slot: 0,
       metric: 'legacy_metric',
-      period: '00:00–10:00',
+      period: '00:00–15:00',
       source: 'OpenDota',
       rule_version: '0.9.0',
       text: 'Сохранённый текст исторического правила.',
-      evidence: [{ field: 'legacy_field', value: 5, period: '00:00–10:00', source: 'OpenDota' }],
+      evidence: [{ field: 'legacy_field', value: 5, period: '00:00–15:00', source: 'OpenDota' }],
       limitations: [],
     }
     const localized = localizeObservation(observation, 'en')
@@ -151,19 +165,19 @@ describe('Локализация периодов, ограничений и р�
   it('переводит известные периоды и сохраняет неизвестные', () => {
     expect(localizePeriod('весь матч', 'en')).toBe('whole match')
     expect(localizePeriod('весь матч', 'ru')).toBe('весь матч')
-    expect(localizePeriod('00:00–10:00', 'en')).toBe('00:00–10:00')
+    expect(localizePeriod('00:00–15:00', 'en')).toBe('00:00–15:00')
     expect(localizePeriod('00:00–25:00', 'en')).toBe('00:00–25:00')
   })
 
   it('переводит известные коды ограничений', () => {
     const limitation = {
-      code: 'laning.events.missing',
-      text: 'Журналы событий первых десяти минут (kills_log, deaths_log) отсутствуют или недостоверны.',
+      code: 'laning.events.first_15.missing',
+      text: 'Журналы событий первых пятнадцати минут (kills_log, deaths_log) отсутствуют или недостоверны.',
     }
     expect(localizeLimitation(limitation, 'ru').text).toBe(limitation.text)
     const en = localizeLimitation(limitation, 'en')
     expect(en.localized).toBe(true)
-    expect(en.text).toBe(translations.en['limitation.laning.events.missing'])
+    expect(en.text).toBe(translations.en['limitation.laning.events.first_15.missing'])
     expect(en.text).toContain('kills_log')
   })
 
@@ -190,11 +204,11 @@ describe('Локализация периодов, ограничений и р�
       'player.not_in_match',
       'match.kda.partial',
       'match.kda.missing',
-      'laning.last_hits_at_10.missing',
-      'laning.gold_at_10.missing',
-      'laning.xp_at_10.missing',
-      'laning.events.missing',
-      'laning.purchases.missing',
+      'laning.last_hits_at_15.missing',
+      'laning.gold_at_15.missing',
+      'laning.xp_at_15.missing',
+      'laning.events.first_15.missing',
+      'laning.purchases_first_15.missing',
       'laning.efficiency_pct.missing',
       'benchmarks.hero_role_missing',
     ]) {

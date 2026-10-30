@@ -190,6 +190,9 @@ export const en: Record<TranslationKey, string> = {
   'match.phase.analyzing': 'Building observations for every participant…',
   'match.phase.saving': 'Saving the report to your history…',
   'match.phase.session': 'Checking the session state…',
+  'match.phase.requestingParse': 'Requesting replay parsing…',
+  'match.phase.waitingParse': 'OpenDota is processing the replay…',
+  'match.phase.refetching': 'Preparing the first 15 minutes of analysis…',
   'match.invalid.badge': 'Invalid ID',
   'match.invalid.title': 'Check the match ID',
   'match.invalid.note':
@@ -220,22 +223,40 @@ export const en: Record<TranslationKey, string> = {
   'match.stats.hint':
     'Values are shown exactly as returned by OpenDota. "No data" means the field is missing from the response and is never replaced with zero. Last hits is a whole-match metric, not the first 10 minutes. The laning report and observations are shown below.',
 
-  // --- Стадия линии 00:00–10:00 ---
-  'laning.title': 'Laning stage — 00:00–10:00',
+  // --- Ранняя стадия 00:00–15:00 ---
+  'laning.title': 'Laning stage — {interval}',
   'laning.empty': 'Select a participant to see the laning stage data.',
   'laning.unavailable':
-    'Detailed laning stage data is unavailable for this match: OpenDota did not return minute series and event logs (the replay was not parsed). Missing values are never replaced with zeros.',
-  'laning.lastHits': 'Last hits at 10:00',
-  'laning.gold': 'Gold at 10:00',
-  'laning.xp': 'Experience at 10:00',
-  'laning.kills': 'Kills 00:00–10:00',
-  'laning.deaths': 'Deaths 00:00–10:00',
+    'Detailed early-stage data is unavailable for this match: OpenDota did not return minute series and event logs (the replay was not parsed). Missing values are never replaced with zeros.',
+  'laning.lastHits': 'Last hits at {minute}',
+  'laning.gold': 'Gold at {minute}',
+  'laning.xp': 'Experience at {minute}',
+  'laning.kills': 'Kills {interval}',
+  'laning.deaths': 'Deaths {interval}',
   'laning.efficiency': 'Lane efficiency (OpenDota)',
-  'laning.purchasesTitle': 'Purchases 00:00–10:00:',
+  'laning.purchasesTitle': 'Purchases {interval}:',
   'laning.purchasesMissing': 'The purchase log is unavailable in the OpenDota response.',
-  'laning.purchasesEmpty': 'No purchases in the 00:00–10:00 interval (the log was received).',
+  'laning.purchasesEmpty':
+    'No displayable items in the {interval} interval (the log was received; ordinary consumables are hidden).',
+  'laning.purchasesHidden': 'Ordinary consumables hidden: {count}.',
+  'laning.purchasesNote':
+    'Components and completed items of the interval are shown; ordinary consumables (Tango, Clarity, Healing Salve, Enchanted Mango, Faerie Fire, wards, Smoke of Deceit, Dust of Appearance, Town Portal Scroll) are hidden. The exceptions are always shown: Bottle, Aghanim’s Shard, Refresher Shard, Cheese, Block of Cheese.',
   'laning.hint':
-    'Source: OpenDota. Period: 00:00–10:00. Minute values come from the OpenDota arrays (index 10 corresponds to 10:00) and are never replaced with whole-match statistics; events are filtered by time in seconds. "No data" means the field is missing from the response. Lane quality is not graded: confirmed hero and role benchmarks are not part of the current version.',
+    'Source: OpenDota. Period: {interval}. Minute values come from the OpenDota arrays (index 15 corresponds to 15:00) and are never replaced with whole-match statistics; events are filtered by time in seconds and purchases also by item type (ordinary consumables are hidden). "No data" means the field is missing from the response. Lane quality is not graded: confirmed hero and role benchmarks are not part of the current version.',
+
+  // --- Items for the match ---
+  'items.title': 'Items for the Match',
+  'items.lead':
+    'Meaningful acquisitions over the whole match: the time is the first purchase in the OpenDota log. Completed items, Bottle and basic Boots of Speed without a confirmed upgrade are shown; components, ordinary consumables and recipes are hidden — the detailed purchase list for the interval is in the lane stage report.',
+  'items.selectPlayer': 'Select a participant to see items.',
+  'items.empty':
+    'No meaningful acquisitions recorded: the log has no completed items, Bottle or basic Boots of Speed.',
+  'items.noLog':
+    'The whole-match purchase log is unavailable in the OpenDota response, so this section cannot be built.',
+  'items.legacyUnavailable':
+    'A report saved in the older format does not contain the whole-match purchase log; this section is unavailable without a new OpenDota request.',
+  'items.hint':
+    'This whole-match section shows only meaningful acquisitions: completed items, Bottle and basic Boots of Speed unless they were upgraded into completed boots (Power Treads, Phase Boots, Arcane Boots, Tranquil Boots, Boots of Travel, Boots of Travel 2, Guardian Greaves, Boots of Bearing). Components (Iron Branch, Gloves of Haste, Mithril Hammer, Magic Stick, etc.), ordinary consumables, recipes, Refresher Shard, Cheese and Block of Cheese are hidden here; the detailed purchase list for 00:00–15:00 is in the lane stage report. The boots upgrade is determined from the confirmed purchase history, not from the final inventory. The time is the first purchase of the item in the OpenDota log; if the time is not confirmed, the item is not shown.',
 
   // --- Наблюдения и рекомендации ---
   'analysis.observationsTitle': 'Observations',
@@ -287,6 +308,39 @@ export const en: Record<TranslationKey, string> = {
   'persistence.limitationsTitle': 'Limitations of the stored data',
   'persistence.retry': 'Retry saving',
   'persistence.retrying': 'Saving…',
+  'persistence.refreshed.badge': 'Report updated',
+  'persistence.refreshed.summary':
+    'The saved report was updated with confirmed replay details: only your row changed and no duplicates were created.',
+  'persistence.refreshSkipped.badge': 'Saved report left unchanged',
+  'persistence.refreshSkipped.notUsable':
+    'The report row is not ready for an update: the saved data was not changed.',
+  'persistence.refreshSkipped.storedDetailed':
+    'The saved report already contains detailed data: nothing was overwritten.',
+  'persistence.refreshSkipped.notDetailed':
+    'Replay details could not be obtained: the previously saved report is shown.',
+  'persistence.refreshSkipped.worseData':
+    'The new data is less complete than the saved one: the report was left unchanged.',
+  'persistence.refreshFailed.summary':
+    'Detailed data was obtained, but the saved report could not be updated — the previous report is shown.',
+
+  // --- Replay parsing (Task 14) ---
+  'parse.title': 'OpenDota replay parsing',
+  'parse.badge.ready': 'Analysis ready',
+  'parse.badge.pending': 'Parsing still in progress',
+  'parse.badge.unavailable': 'Replay unavailable',
+  'parse.badge.failed': 'Parsing not completed',
+  'parse.ready': 'Analysis ready: detailed replay data has been loaded.',
+  'parse.pending':
+    'OpenDota is still processing the replay. The request is stored: the next time you open this page, tracking resumes automatically.',
+  'parse.replayUnavailable': 'Replay unavailable. Showing available statistics.',
+  'parse.rateLimited': 'OpenDota rate-limited the requests. Showing available statistics.',
+  'parse.networkFailed':
+    'The network is unavailable or OpenDota is not responding. Showing available statistics.',
+  'parse.failed': 'Detailed replay data could not be obtained. Showing available statistics.',
+  'parse.incomplete':
+    'The replay was parsed, but the detailed data is still incomplete. Showing available statistics.',
+  'parse.hint':
+    'The parsing request is sent automatically — no separate button is needed. Repeat requests are limited to avoid wasting OpenDota rate limits.',
   'persistence.rulesMismatch':
     'The report was saved with analysis rules version {stored}; the current rules version is {current}. Stored observations are shown without recalculation.',
 
@@ -347,14 +401,26 @@ export const en: Record<TranslationKey, string> = {
   'limitation.match.kda.missing': 'Whole-match K/D/A values are missing from the OpenDota response.',
   'limitation.laning.last_hits_at_10.missing':
     'No last hits data at minute 10: the lh_t series is missing or shorter than 11 elements.',
+  'limitation.laning.last_hits_at_15.missing':
+    'No last hits data at minute 15: the lh_t series is missing or shorter than 16 elements.',
   'limitation.laning.gold_at_10.missing':
     'No gold data at minute 10: the gold_t series is missing or shorter than 11 elements.',
+  'limitation.laning.gold_at_15.missing':
+    'No gold data at minute 15: the gold_t series is missing or shorter than 16 elements.',
   'limitation.laning.xp_at_10.missing':
     'No experience data at minute 10: the xp_t series is missing or shorter than 11 elements.',
+  'limitation.laning.xp_at_15.missing':
+    'No experience data at minute 15: the xp_t series is missing or shorter than 16 elements.',
   'limitation.laning.events.missing':
     'First-ten-minutes event logs (kills_log, deaths_log) are missing or unreliable.',
+  'limitation.laning.events.first_15.missing':
+    'First-fifteen-minutes event logs (kills_log, deaths_log) are missing or unreliable.',
+  'limitation.laning.events.partial':
+    'Early-stage kill and death logs are only partially available — no observation was produced.',
   'limitation.laning.purchases.missing':
     'The purchase log is unavailable — the number of first-ten-minutes purchases is undetermined.',
+  'limitation.laning.purchases_first_15.missing':
+    'The purchase log is unavailable — the number of first-fifteen-minutes purchases is undetermined.',
   'limitation.laning.efficiency_pct.missing':
     'Lane efficiency (lane_efficiency_pct) is missing from the OpenDota response.',
   'limitation.benchmarks.hero_role_missing':

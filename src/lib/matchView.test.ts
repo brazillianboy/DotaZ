@@ -18,7 +18,7 @@ import {
 } from './matchView'
 
 /** Синтетический участник для тестов представления (без данных стадии линии). */
-function makePlayer(overrides: Partial<Omit<NormalizedPlayer, 'laning'>> = {}): NormalizedPlayer {
+function makePlayer(overrides: Partial<Omit<NormalizedPlayer, 'laning' | 'purchaseLog'>> = {}): NormalizedPlayer {
   return {
     player_slot: 0,
     team: 'radiant',
@@ -29,6 +29,7 @@ function makePlayer(overrides: Partial<Omit<NormalizedPlayer, 'laning'>> = {}): 
     gold_per_min: 100,
     xp_per_min: 100,
     last_hits: 10,
+    purchaseLog: null,
     laning: buildLaningStageData({}),
     ...overrides,
   }

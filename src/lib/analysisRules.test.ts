@@ -26,9 +26,9 @@ const RAW_FULL_PLAYER = {
   gold_per_min: 619,
   xp_per_min: 786,
   last_hits: 238,
-  lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47],
-  gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864],
-  xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907],
+  lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47, 53, 57, 62, 70, 86],
+  gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864, 4191, 4520, 4890, 5300, 5860],
+  xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907, 3201, 3501, 3820, 4150, 4512],
   kills_log: [{ time: 102 }, { time: 182 }, { time: 540 }, { time: 900 }],
   deaths_log: [{ time: 186 }, { time: 1500 }],
   purchase_log: [
@@ -57,7 +57,7 @@ describe('Test 1 — версия правил', () => {
   it('использует единую версию правил во всех результатах', () => {
     const match = buildMatch([RAW_FULL_PLAYER])
     const analysis = analyzePlayer(match, firstPlayer(match))
-    expect(ANALYSIS_RULES_VERSION).toBe('1.0.0')
+    expect(ANALYSIS_RULES_VERSION).toBe('1.1.0')
     expect(analysis.rule_version).toBe(ANALYSIS_RULES_VERSION)
     for (const observation of analysis.observations) {
       expect(observation.rule_version).toBe(ANALYSIS_RULES_VERSION)
@@ -70,11 +70,11 @@ describe('Test 2 — стабильные идентификаторы прав�
     const match = buildMatch([RAW_FULL_PLAYER])
     const ids = analyzePlayer(match, firstPlayer(match)).observations.map((o) => o.rule_id)
     expect(ids).toContain(ANALYSIS_RULE_IDS.matchKda)
-    expect(ids).toContain(ANALYSIS_RULE_IDS.lastHitsAt10)
+    expect(ids).toContain(ANALYSIS_RULE_IDS.lastHitsAt15)
     expect(ids).toContain(ANALYSIS_RULE_IDS.laningKillsDeaths)
-    expect(ids).toContain(ANALYSIS_RULE_IDS.goldAt10)
-    expect(ids).toContain(ANALYSIS_RULE_IDS.xpAt10)
-    expect(ids).toContain(ANALYSIS_RULE_IDS.purchasesFirst10)
+    expect(ids).toContain(ANALYSIS_RULE_IDS.goldAt15)
+    expect(ids).toContain(ANALYSIS_RULE_IDS.xpAt15)
+    expect(ids).toContain(ANALYSIS_RULE_IDS.purchasesFirst15)
     expect(ids).toContain(ANALYSIS_RULE_IDS.laneEfficiencyPct)
   })
 })
@@ -137,48 +137,48 @@ describe('Test 6 — отсутствующие значения K/D/A', () => {
   })
 })
 
-describe('Test 7 — добивания к 10:00', () => {
-  it('использует lh_t[10] и период 00:00–10:00', () => {
+describe('Test 7 — добивания к 15:00', () => {
+  it('использует lh_t[15] и период 00:00–15:00', () => {
     const match = buildMatch([RAW_FULL_PLAYER])
     const observation = analyzePlayer(match, firstPlayer(match)).observations.find(
-      (o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt10,
+      (o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt15,
     )
     expect(observation?.period).toBe(PERIOD_LANING)
     expect(observation?.evidence).toEqual([
-      { field: 'lh_t[10]', value: 47, period: PERIOD_LANING, source: 'OpenDota' },
+      { field: 'lh_t[15]', value: 86, period: PERIOD_LANING, source: 'OpenDota' },
     ])
   })
 })
 
-describe('Test 8 — отсутствующие добивания к 10:00', () => {
+describe('Test 8 — отсутствующие добивания к 15:00', () => {
   it('без ряда lh_t наблюдения нет, есть ограничение', () => {
     const match = buildMatch([{ player_slot: 0, last_hits: 238 }])
     const analysis = analyzePlayer(match, firstPlayer(match))
-    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt10)).toBe(false)
-    expect(analysis.limitations.map((l) => l.code)).toContain('laning.last_hits_at_10.missing')
+    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt15)).toBe(false)
+    expect(analysis.limitations.map((l) => l.code)).toContain('laning.last_hits_at_15.missing')
   })
 })
 
-describe('Test 9 — золото к 10:00', () => {
-  it('формирует наблюдение по gold_t[10]', () => {
+describe('Test 9 — золото к 15:00', () => {
+  it('формирует наблюдение по gold_t[15]', () => {
     const match = buildMatch([RAW_FULL_PLAYER])
     const observation = analyzePlayer(match, firstPlayer(match)).observations.find(
-      (o) => o.rule_id === ANALYSIS_RULE_IDS.goldAt10,
+      (o) => o.rule_id === ANALYSIS_RULE_IDS.goldAt15,
     )
     expect(observation?.evidence).toEqual([
-      { field: 'gold_t[10]', value: 3864, period: PERIOD_LANING, source: 'OpenDota' },
+      { field: 'gold_t[15]', value: 5860, period: PERIOD_LANING, source: 'OpenDota' },
     ])
   })
 })
 
-describe('Test 10 — опыт к 10:00', () => {
-  it('формирует наблюдение по xp_t[10]', () => {
+describe('Test 10 — опыт к 15:00', () => {
+  it('формирует наблюдение по xp_t[15]', () => {
     const match = buildMatch([RAW_FULL_PLAYER])
     const observation = analyzePlayer(match, firstPlayer(match)).observations.find(
-      (o) => o.rule_id === ANALYSIS_RULE_IDS.xpAt10,
+      (o) => o.rule_id === ANALYSIS_RULE_IDS.xpAt15,
     )
     expect(observation?.evidence).toEqual([
-      { field: 'xp_t[10]', value: 2907, period: PERIOD_LANING, source: 'OpenDota' },
+      { field: 'xp_t[15]', value: 4512, period: PERIOD_LANING, source: 'OpenDota' },
     ])
   })
 })
@@ -186,23 +186,23 @@ describe('Test 10 — опыт к 10:00', () => {
 describe('Test 11 — частичная доступность золота и опыта', () => {
   it('золото есть, опыта нет: одно наблюдение и соответствующее ограничение', () => {
     const match = buildMatch([
-      { player_slot: 0, gold_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1234] },
+      { player_slot: 0, gold_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 1234, 1500, 1800, 2200, 2600, 3000] },
     ])
     const analysis = analyzePlayer(match, firstPlayer(match))
-    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.goldAt10)).toBe(true)
-    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.xpAt10)).toBe(false)
-    expect(analysis.limitations.map((l) => l.code)).toContain('laning.xp_at_10.missing')
+    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.goldAt15)).toBe(true)
+    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.xpAt15)).toBe(false)
+    expect(analysis.limitations.map((l) => l.code)).toContain('laning.xp_at_15.missing')
   })
 })
 
-describe('Test 12 — убийства и смерти первых десяти минут', () => {
+describe('Test 12 — убийства и смерти первых пятнадцати минут', () => {
   it('учитывает только события интервала и сохраняет оба подтверждения', () => {
     const match = buildMatch([RAW_FULL_PLAYER])
     const observation = analyzePlayer(match, firstPlayer(match)).observations.find(
       (o) => o.rule_id === ANALYSIS_RULE_IDS.laningKillsDeaths,
     )
     // kills_log: 102, 182, 540 в интервале (900 — вне); deaths_log: 186 (1500 — вне).
-    expect(observation?.evidence.map((e) => e.value)).toEqual([3, 1])
+    expect(observation?.evidence.map((e) => e.value)).toEqual([4, 1])
     expect(observation?.period).toBe(PERIOD_LANING)
   })
 })
@@ -212,7 +212,7 @@ describe('Test 13 — отсутствующие журналы событий',
     const match = buildMatch([{ player_slot: 0, kills: 10, deaths: 2 }])
     const analysis = analyzePlayer(match, firstPlayer(match))
     expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.laningKillsDeaths)).toBe(false)
-    expect(analysis.limitations.map((l) => l.code)).toContain('laning.events.missing')
+    expect(analysis.limitations.map((l) => l.code)).toContain('laning.events.first_15.missing')
   })
 })
 
@@ -230,7 +230,7 @@ describe('Test 15 — пустой доступный журнал покупо�
   it('пустой журнал даёт наблюдение о нуле покупок', () => {
     const match = buildMatch([{ player_slot: 0, purchase_log: [] }])
     const observation = analyzePlayer(match, firstPlayer(match)).observations.find(
-      (o) => o.rule_id === ANALYSIS_RULE_IDS.purchasesFirst10,
+      (o) => o.rule_id === ANALYSIS_RULE_IDS.purchasesFirst15,
     )
     expect(observation?.evidence[0].value).toBe(0)
     expect(observation?.text).toContain('0')
@@ -241,19 +241,19 @@ describe('Test 16 — отсутствующий журнал покупок', (
   it('нет журнала → наблюдения о покупках нет, ноль не выдумывается', () => {
     const match = buildMatch([{ player_slot: 0, lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 47] }])
     const analysis = analyzePlayer(match, firstPlayer(match))
-    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.purchasesFirst10)).toBe(false)
-    expect(analysis.limitations.map((l) => l.code)).toContain('laning.purchases.missing')
+    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.purchasesFirst15)).toBe(false)
+    expect(analysis.limitations.map((l) => l.code)).toContain('laning.purchases_first_15.missing')
   })
 })
 
 describe('Test 17 — корректный подсчёт покупок', () => {
-  it('учитывает только записи интервала 00:00–10:00', () => {
+  it('учитывает только записи интервала 00:00–15:00', () => {
     const match = buildMatch([RAW_FULL_PLAYER])
     const observation = analyzePlayer(match, firstPlayer(match)).observations.find(
-      (o) => o.rule_id === ANALYSIS_RULE_IDS.purchasesFirst10,
+      (o) => o.rule_id === ANALYSIS_RULE_IDS.purchasesFirst15,
     )
     // Предматчевая (-89) и запись после 10:00 (700) исключены.
-    expect(observation?.evidence[0].value).toBe(2)
+    expect(observation?.evidence[0].value).toBe(3)
   })
 })
 
@@ -300,7 +300,7 @@ describe('Test 20 — некорректные или недоверенные �
     expect(analysis.observations).toEqual([])
     expect(analysis.hasObservations).toBe(false)
     expect(analysis.limitations.map((l) => l.code)).toContain('match.kda.missing')
-    expect(analysis.limitations.map((l) => l.code)).toContain('laning.last_hits_at_10.missing')
+    expect(analysis.limitations.map((l) => l.code)).toContain('laning.last_hits_at_15.missing')
   })
 })
 
@@ -317,19 +317,19 @@ describe('Test 21 — нет наблюдений при полном отсут
 describe('Test 22 — содержательные ограничения при частичных данных', () => {
   it('каждое отсутствующее поле даёт своё ограничение, не отменяя остальные факты', () => {
     const match = buildMatch([
-      { player_slot: 0, kills: 1, deaths: 2, assists: 3, lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 47] },
+      { player_slot: 0, kills: 1, deaths: 2, assists: 3, lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 47, 53, 57, 62, 70, 86] },
     ])
     const analysis = analyzePlayer(match, firstPlayer(match))
     const codes = analysis.limitations.map((l) => l.code)
-    expect(codes).toContain('laning.events.missing')
-    expect(codes).toContain('laning.gold_at_10.missing')
-    expect(codes).toContain('laning.xp_at_10.missing')
-    expect(codes).toContain('laning.purchases.missing')
+    expect(codes).toContain('laning.events.first_15.missing')
+    expect(codes).toContain('laning.gold_at_15.missing')
+    expect(codes).toContain('laning.xp_at_15.missing')
+    expect(codes).toContain('laning.purchases_first_15.missing')
     expect(codes).toContain('laning.efficiency_pct.missing')
     expect(codes).toContain('benchmarks.hero_role_missing')
     // Доступные факты при этом сохранены.
     expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.matchKda)).toBe(true)
-    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt10)).toBe(true)
+    expect(analysis.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt15)).toBe(true)
   })
 })
 
@@ -386,22 +386,22 @@ describe('Test 26 — подтверждения совпадают с норм�
     expect(byField.get('kills')).toBe(player.kills)
     expect(byField.get('deaths')).toBe(player.deaths)
     expect(byField.get('assists')).toBe(player.assists)
-    expect(byField.get('lh_t[10]')).toBe(player.laning.lastHitsAt10)
-    expect(byField.get('gold_t[10]')).toBe(player.laning.goldAt10)
-    expect(byField.get('xp_t[10]')).toBe(player.laning.xpAt10)
+    expect(byField.get('lh_t[15]')).toBe(player.laning.lastHits)
+    expect(byField.get('gold_t[15]')).toBe(player.laning.gold)
+    expect(byField.get('xp_t[15]')).toBe(player.laning.xp)
     expect(byField.get('lane_efficiency_pct')).toBe(player.laning.laneEfficiencyPct)
   })
 })
 
-describe('Test 27 — различие показателей матча и первых десяти минут', () => {
-  it('добивания к 10:00 не равны last_hits за матч и имеют другой период', () => {
+describe('Test 27 — различие показателей матча и первых пятнадцати минут', () => {
+  it('добивания к 15:00 не равны last_hits за матч и имеют другой период', () => {
     const match = buildMatch([RAW_FULL_PLAYER])
     const player = firstPlayer(match)
     const analysis = analyzePlayer(match, player)
     const observation = analysis.observations.find(
-      (o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt10,
+      (o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt15,
     )
-    expect(player.laning.lastHitsAt10).toBe(47)
+    expect(player.laning.lastHits).toBe(86)
     expect(player.last_hits).toBe(238)
     expect(observation?.evidence[0].value).not.toBe(player.last_hits)
     expect(observation?.period).toBe(PERIOD_LANING)
@@ -442,17 +442,17 @@ describe('Test 30 — независимые результаты для раз�
         kills: 1,
         deaths: 9,
         assists: 2,
-        lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12],
+        lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15, 19, 24, 30, 41],
       },
     ])
     const radiant = analyzePlayer(match, match.players[0])
     const dire = analyzePlayer(match, match.players[1])
     expect(radiant.player_slot).toBe(0)
     expect(dire.player_slot).toBe(128)
-    const radiantLh = radiant.observations.find((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt10)
-    const direLh = dire.observations.find((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt10)
-    expect(radiantLh?.evidence[0].value).toBe(47)
-    expect(direLh?.evidence[0].value).toBe(12)
+    const radiantLh = radiant.observations.find((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt15)
+    const direLh = dire.observations.find((o) => o.rule_id === ANALYSIS_RULE_IDS.lastHitsAt15)
+    expect(radiantLh?.evidence[0].value).toBe(86)
+    expect(direLh?.evidence[0].value).toBe(41)
     expect(dire.observations.some((o) => o.rule_id === ANALYSIS_RULE_IDS.matchKda)).toBe(true)
   })
 })
@@ -475,11 +475,11 @@ describe('Test 32 — предсказуемый порядок наблюден
     const analysis = analyzePlayer(match, firstPlayer(match))
     expect(analysis.observations.map((o) => o.rule_id)).toEqual([
       ANALYSIS_RULE_IDS.matchKda,
-      ANALYSIS_RULE_IDS.lastHitsAt10,
+      ANALYSIS_RULE_IDS.lastHitsAt15,
       ANALYSIS_RULE_IDS.laningKillsDeaths,
-      ANALYSIS_RULE_IDS.goldAt10,
-      ANALYSIS_RULE_IDS.xpAt10,
-      ANALYSIS_RULE_IDS.purchasesFirst10,
+      ANALYSIS_RULE_IDS.goldAt15,
+      ANALYSIS_RULE_IDS.xpAt15,
+      ANALYSIS_RULE_IDS.purchasesFirst15,
       ANALYSIS_RULE_IDS.laneEfficiencyPct,
     ])
     expect(analysis.limitations.map((l) => l.code)).toEqual(['benchmarks.hero_role_missing'])

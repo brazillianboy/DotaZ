@@ -5,9 +5,10 @@ import type {
   PlayerAnalysis,
 } from '../types/analysis'
 import type { NormalizedMatch, NormalizedPlayer } from '../types/match'
+import { LANING_INTERVAL_LABEL } from './laning'
 
 /**
- * Детерминированный движок наблюдений и рекомендаций (Task 9).
+ * Детерминированный движок наблюдений и рекомендаций (Task 9; интервал 15 минут).
  *
  * Принципы:
  *  - только подтверждённые факты из нормализованных данных (Tasks 6–8);
@@ -19,21 +20,25 @@ import type { NormalizedMatch, NormalizedPlayer } from '../types/match'
  *  - функция чистая и детерминированная: без сети, БД, состояния и текущего времени.
  */
 
-/** Версия правил анализа. Изменение поведения правил требует новой версии. */
-export const ANALYSIS_RULES_VERSION = '1.0.0'
+/**
+ * Версия правил анализа. Изменение поведения правил требует новой версии:
+ * версия `1.1.0` переводит раннюю стадию с интервала 00:00–10:00 на 00:00–15:00,
+ * поэтому наблюдения версии `1.0.0` в сохранённых отчётах не пересчитываются.
+ */
+export const ANALYSIS_RULES_VERSION = '1.1.0'
 
 /** Периоды, к которым относятся показатели. */
 export const PERIOD_MATCH = 'весь матч'
-export const PERIOD_LANING = '00:00–10:00'
+export const PERIOD_LANING = LANING_INTERVAL_LABEL
 
 /** Стабильные идентификаторы правил (не переименовывать без смены версии). */
 export const ANALYSIS_RULE_IDS = {
   matchKda: 'match.kda',
-  lastHitsAt10: 'laning.last_hits_at_10',
-  laningKillsDeaths: 'laning.kills_deaths_first_10',
-  goldAt10: 'laning.gold_at_10',
-  xpAt10: 'laning.xp_at_10',
-  purchasesFirst10: 'laning.purchases_first_10',
+  lastHitsAt15: 'laning.last_hits_at_15',
+  laningKillsDeaths: 'laning.kills_deaths_first_15',
+  goldAt15: 'laning.gold_at_15',
+  xpAt15: 'laning.xp_at_15',
+  purchasesFirst15: 'laning.purchases_first_15',
   laneEfficiencyPct: 'laning.efficiency_pct',
 } as const
 
@@ -139,111 +144,111 @@ export function analyzePlayer(match: NormalizedMatch, player: NormalizedPlayer):
     })
   }
 
-  // --- Правило B: добивания к 10:00 ---
-  const { lastHitsAt10 } = player.laning
-  if (lastHitsAt10 !== null) {
+  // --- Правило B: добивания к 15:00 ---
+  const { lastHits } = player.laning
+  if (lastHits !== null) {
     observations.push(
       makeObservation(
-        ANALYSIS_RULE_IDS.lastHitsAt10,
+        ANALYSIS_RULE_IDS.lastHitsAt15,
         playerSlot,
-        'last_hits_at_10',
+        'last_hits_at_15',
         PERIOD_LANING,
-        `Добивания к 10:00 (lh_t[10]) — ${lastHitsAt10}.`,
-        [makeEvidence('lh_t[10]', lastHitsAt10, PERIOD_LANING)],
+        `Добивания к 15:00 (lh_t[15]) — ${lastHits}.`,
+        [makeEvidence('lh_t[15]', lastHits, PERIOD_LANING)],
       ),
     )
   } else {
     limitations.push({
-      code: 'laning.last_hits_at_10.missing',
-      text: 'Нет данных о добиваниях к 10-й минуте: поминутный ряд lh_t отсутствует или короче 11 элементов.',
+      code: 'laning.last_hits_at_15.missing',
+      text: 'Нет данных о добиваниях к 15-й минуте: поминутный ряд lh_t отсутствует или короче 16 элементов.',
     })
   }
 
-  // --- Правило C: убийства и смерти в интервале 00:00–10:00 ---
-  const { killsFirst10, deathsFirst10 } = player.laning
-  if (killsFirst10 !== null && deathsFirst10 !== null) {
+  // --- Правило C: убийства и смерти в интервале 00:00–15:00 ---
+  const { killsFirst, deathsFirst } = player.laning
+  if (killsFirst !== null && deathsFirst !== null) {
     observations.push(
       makeObservation(
         ANALYSIS_RULE_IDS.laningKillsDeaths,
         playerSlot,
-        'kills_deaths_first_10',
+        'kills_deaths_first_15',
         PERIOD_LANING,
-        `Первые десять минут: убийства — ${killsFirst10}, смерти — ${deathsFirst10}.`,
+        `Первые пятнадцать минут: убийства — ${killsFirst}, смерти — ${deathsFirst}.`,
         [
-          makeEvidence('kills_log (00:00–10:00)', killsFirst10, PERIOD_LANING),
-          makeEvidence('deaths_log (00:00–10:00)', deathsFirst10, PERIOD_LANING),
+          makeEvidence('kills_log (00:00–15:00)', killsFirst, PERIOD_LANING),
+          makeEvidence('deaths_log (00:00–15:00)', deathsFirst, PERIOD_LANING),
         ],
       ),
     )
-  } else if (killsFirst10 !== null || deathsFirst10 !== null) {
+  } else if (killsFirst !== null || deathsFirst !== null) {
     limitations.push({
       code: 'laning.events.partial',
-      text: 'Журналы убийств и смертей первых десяти минут доступны не полностью — наблюдение не сформировано.',
+      text: 'Журналы убийств и смертей первых пятнадцати минут доступны не полностью — наблюдение не сформировано.',
     })
   } else {
     limitations.push({
-      code: 'laning.events.missing',
-      text: 'Журналы событий первых десяти минут (kills_log, deaths_log) отсутствуют или недостоверны.',
+      code: 'laning.events.first_15.missing',
+      text: 'Журналы событий первых пятнадцати минут (kills_log, deaths_log) отсутствуют или недостоверны.',
     })
   }
 
-  // --- Правило D1: накопленное золото к 10:00 ---
-  const { goldAt10, xpAt10, purchasesFirst10, laneEfficiencyPct } = player.laning
-  if (goldAt10 !== null) {
+  // --- Правило D1: накопленное золото к 15:00 ---
+  const { gold, xp, purchasesFirst, laneEfficiencyPct } = player.laning
+  if (gold !== null) {
     observations.push(
       makeObservation(
-        ANALYSIS_RULE_IDS.goldAt10,
+        ANALYSIS_RULE_IDS.goldAt15,
         playerSlot,
-        'gold_at_10',
+        'gold_at_15',
         PERIOD_LANING,
-        `Накопленное золото к 10:00 (gold_t[10]) — ${goldAt10}.`,
-        [makeEvidence('gold_t[10]', goldAt10, PERIOD_LANING)],
+        `Накопленное золото к 15:00 (gold_t[15]) — ${gold}.`,
+        [makeEvidence('gold_t[15]', gold, PERIOD_LANING)],
       ),
     )
   } else {
     limitations.push({
-      code: 'laning.gold_at_10.missing',
-      text: 'Нет данных о золоте к 10-й минуте: поминутный ряд gold_t отсутствует или короче 11 элементов.',
+      code: 'laning.gold_at_15.missing',
+      text: 'Нет данных о золоте к 15-й минуте: поминутный ряд gold_t отсутствует или короче 16 элементов.',
     })
   }
 
-  // --- Правило D2: накопленный опыт к 10:00 ---
-  if (xpAt10 !== null) {
+  // --- Правило D2: накопленный опыт к 15:00 ---
+  if (xp !== null) {
     observations.push(
       makeObservation(
-        ANALYSIS_RULE_IDS.xpAt10,
+        ANALYSIS_RULE_IDS.xpAt15,
         playerSlot,
-        'xp_at_10',
+        'xp_at_15',
         PERIOD_LANING,
-        `Накопленный опыт к 10:00 (xp_t[10]) — ${xpAt10}.`,
-        [makeEvidence('xp_t[10]', xpAt10, PERIOD_LANING)],
+        `Накопленный опыт к 15:00 (xp_t[15]) — ${xp}.`,
+        [makeEvidence('xp_t[15]', xp, PERIOD_LANING)],
       ),
     )
   } else {
     limitations.push({
-      code: 'laning.xp_at_10.missing',
-      text: 'Нет данных об опыте к 10-й минуте: поминутный ряд xp_t отсутствует или короче 11 элементов.',
+      code: 'laning.xp_at_15.missing',
+      text: 'Нет данных об опыте к 15-й минуте: поминутный ряд xp_t отсутствует или короче 16 элементов.',
     })
   }
 
-  // --- Правило E: покупки в интервале 00:00–10:00 ---
-  if (purchasesFirst10 !== null) {
+  // --- Правило E: покупки в интервале 00:00–15:00 ---
+  if (purchasesFirst !== null) {
     observations.push(
       makeObservation(
-        ANALYSIS_RULE_IDS.purchasesFirst10,
+        ANALYSIS_RULE_IDS.purchasesFirst15,
         playerSlot,
-        'purchases_first_10',
+        'purchases_first_15',
         PERIOD_LANING,
-        purchasesFirst10.length === 0
-          ? 'Покупки в интервале 00:00–10:00: 0 (журнал получен, покупок нет).'
-          : `Покупки в интервале 00:00–10:00: ${purchasesFirst10.length}.`,
-        [makeEvidence('purchase_log (00:00–10:00)', purchasesFirst10.length, PERIOD_LANING)],
+        purchasesFirst.length === 0
+          ? 'Покупки в интервале 00:00–15:00: 0 (журнал получен, покупок нет).'
+          : `Покупки в интервале 00:00–15:00: ${purchasesFirst.length}.`,
+        [makeEvidence('purchase_log (00:00–15:00)', purchasesFirst.length, PERIOD_LANING)],
       ),
     )
   } else {
     limitations.push({
-      code: 'laning.purchases.missing',
-      text: 'Журнал покупок недоступен — количество покупок первых десяти минут не определено.',
+      code: 'laning.purchases_first_15.missing',
+      text: 'Журнал покупок недоступен — количество покупок первых пятнадцати минут не определено.',
     })
   }
 

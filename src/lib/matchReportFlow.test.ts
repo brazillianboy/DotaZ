@@ -21,6 +21,7 @@ import {
   type ReportDbError,
 } from './matchReports'
 import { normalizeMatch } from './normalizeMatch'
+import type { MatchParseOutcome } from './matchParseFlow'
 import type { OpenDotaMatchResult } from './opendota'
 
 /**
@@ -46,9 +47,9 @@ const RAW_MATCH = {
       deaths: 3,
       assists: 15,
       last_hits: 238,
-      lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47],
-      gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864],
-      xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907],
+      lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47, 53, 58, 64, 70, 76, 82],
+      gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864, 4210, 4580, 4940, 5310, 5680, 6040],
+      xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907, 3150, 3400, 3650, 3900, 4150, 4400],
       kills_log: [{ time: 102 }],
       deaths_log: [{ time: 186 }],
       purchase_log: [{ time: 120, key: 'boots' }],
@@ -60,7 +61,12 @@ const RAW_MATCH = {
       kills: 1,
       deaths: 9,
       assists: 2,
-      lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12],
+      lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 14, 16, 18, 20, 22, 24],
+      gold_t: [0, 210, 480, 700, 950, 1180, 1400, 1650, 1900, 2150, 2380, 2600, 2820, 3050, 3270, 3500, 3720],
+      xp_t: [0, 90, 260, 430, 610, 800, 990, 1180, 1370, 1560, 1750, 1940, 2130, 2320, 2510, 2700, 2890],
+      kills_log: [],
+      deaths_log: [{ time: 300 }],
+      purchase_log: [{ time: 95, key: 'magic_wand' }],
     },
   ],
 }
@@ -121,6 +127,18 @@ function makeFakeClient() {
       store.rows.push(row)
       return { data: row, error: null }
     },
+    async updatePersonalReport(payload: MatchReportInsert) {
+      const index = store.rows.findIndex(
+        (item) => item.user_id === payload.user_id && item.match_id === payload.match_id,
+      )
+      if (index === -1) {
+        // Строки нет: обновление не подтверждено (сервис вернёт ошибку).
+        return { data: null, error: null }
+      }
+      const updated: FakeRow = { ...store.rows[index], ...payload }
+      store.rows[index] = updated
+      return { data: updated, error: null }
+    },
   }
 
   return { store, client }
@@ -145,9 +163,10 @@ function makeFakeFetch(
 
 /** Сервис с программируемыми ответами — для гонок, pending и повреждённых снимков. */
 function makeServiceStub() {
-  const calls = { select: 0, insert: 0 }
+  const calls = { select: 0, insert: 0, refresh: 0 }
   const selectQueue: Array<{ row: unknown | null; error?: ReportDbError }> = []
   const insertQueue: Array<{ row: unknown | null; error?: ReportDbError }> = []
+  const refreshQueue: Array<{ row: unknown | null; error?: ReportDbError }> = []
 
   const service: MatchReportsService = {
     async getPersonalMatchReport() {
@@ -190,9 +209,31 @@ function makeServiceStub() {
       }
       return { ok: true, report: parsed.view, created: true }
     },
+    async refreshPersonalMatchReport() {
+      calls.refresh += 1
+      const next = refreshQueue.shift() ?? {
+        row: null,
+        error: {
+          kind: 'unknown',
+          code: null,
+          message: 'нет запрограммированного ответа',
+        } as ReportDbError,
+      }
+      if (next.error !== undefined) {
+        return { ok: false, error: next.error }
+      }
+      const parsed = parseStoredMatchReport(next.row)
+      if (!parsed.ok) {
+        return {
+          ok: false,
+          error: { kind: 'invalid_payload', code: null, message: parsed.message },
+        }
+      }
+      return { ok: true, report: parsed.view }
+    },
   }
 
-  return { calls, selectQueue, insertQueue, service }
+  return { calls, selectQueue, insertQueue, refreshQueue, service }
 }
 
 function makeDeps(overrides: Partial<MatchReportFlowDeps> = {}): MatchReportFlowDeps {
@@ -222,6 +263,27 @@ function buildInsert(userId = USER_A): MatchReportInsert {
     userId,
     requestedId: MATCH_ID,
     match: normalizeMatch(RAW_MATCH),
+    fetchedAt: '2026-10-24T09:00:00.000Z',
+  })
+}
+
+/**
+ * Матч без подробных данных: у второго участника нет таймлайнов и журнала покупок.
+ * Такой снимок соответствует отчёту, сохранённому до появления Task 14.
+ */
+const PARTIAL_RAW_MATCH = {
+  ...RAW_MATCH,
+  players: [
+    RAW_MATCH.players[0],
+    { player_slot: 128, hero_id: 11, kills: 1, deaths: 9, assists: 2, last_hits: 12 },
+  ],
+}
+
+function buildPartialInsert(userId = USER_A): MatchReportInsert {
+  return buildReportInsert({
+    userId,
+    requestedId: MATCH_ID,
+    match: normalizeMatch(PARTIAL_RAW_MATCH),
     fetchedAt: '2026-10-24T09:00:00.000Z',
   })
 }
@@ -690,5 +752,165 @@ describe('сессия, гостевой режим и повторное сох
     const retried = await retrySaveReport(deps, view)
     expect(retried.save.kind).toBe('guest')
     expect(store.insertCalls).toBe(0)
+  })
+})
+
+describe('автоматическая обработка реплея и обновление отчёта (Task 14)', () => {
+  it('не блокирует обработку реплея сохранённым отчётом без подробных данных', async () => {
+    const { store, client } = makeFakeClient()
+    const service = createMatchReportsService(client)
+    await service.savePersonalMatchReport(buildPartialInsert())
+    const fakeFetch = makeFakeFetch()
+    const parseCalls: string[] = []
+    const outcomes: MatchParseOutcome[] = []
+
+    const result = await loadOrCreatePersonalReport(
+      makeDeps({
+        service,
+        fetchMatch: fakeFetch.fetchMatch,
+        parseDetailedData: async ({ matchId }) => {
+          parseCalls.push(matchId)
+          return { kind: 'parsed', match: normalizeMatch(RAW_MATCH), jobId: '99' }
+        },
+        onParseOutcome: (outcome) => outcomes.push(outcome),
+      }),
+      MATCH_ID,
+    )
+    const { view, save } = expectReport(result)
+
+    expect(parseCalls).toEqual([MATCH_ID])
+    expect(save.kind).toBe('refreshed')
+    expect(view.id).toBe('row-1')
+    // Обновлена ровно одна (своя) строка, дубликатов нет.
+    expect(store.rows).toHaveLength(1)
+    expect(outcomes).toHaveLength(1)
+    expect(outcomes[0].kind).toBe('parsed')
+  })
+
+  it('использует подробный сохранённый отчёт без запросов к сети', async () => {
+    const { client } = makeFakeClient()
+    const service = createMatchReportsService(client)
+    await service.savePersonalMatchReport(buildInsert())
+    const fakeFetch = makeFakeFetch()
+    let parseCalls = 0
+
+    const result = await loadOrCreatePersonalReport(
+      makeDeps({
+        service,
+        fetchMatch: fakeFetch.fetchMatch,
+        parseDetailedData: async ({ match }) => {
+          parseCalls += 1
+          return { kind: 'not-needed', match }
+        },
+      }),
+      MATCH_ID,
+    )
+    const { save } = expectReport(result)
+
+    expect(save.kind).toBe('stored')
+    expect(parseCalls).toBe(0)
+    expect(fakeFetch.calls).toEqual([])
+  })
+
+  it('оставляет сохранённый отчёт без изменений, когда обработка недоступна', async () => {
+    const { store, client } = makeFakeClient()
+    const service = createMatchReportsService(client)
+    await service.savePersonalMatchReport(buildPartialInsert())
+
+    const result = await loadOrCreatePersonalReport(
+      makeDeps({
+        service,
+        // Данные остались неполными: реплей недоступен, подробностей нет.
+        fetchMatch: makeFakeFetch(() => ({ ok: true, match: PARTIAL_RAW_MATCH })).fetchMatch,
+        parseDetailedData: async ({ match }) => ({
+          kind: 'replay-unavailable',
+          reason: 'expired',
+          match,
+        }),
+      }),
+      MATCH_ID,
+    )
+    const { view, save } = expectReport(result)
+
+    expect(save.kind).toBe('refresh-skipped')
+    if (save.kind === 'refresh-skipped') {
+      expect(save.reason).toBe('not-detailed')
+    }
+    expect(view.id).toBe('row-1')
+    expect(store.rows).toHaveLength(1)
+  })
+
+  it('не объявляет обновление успешным при сбое базы и не теряет прежний отчёт', async () => {
+    const { store, client } = makeFakeClient()
+    const service = createMatchReportsService(client)
+    await service.savePersonalMatchReport(buildPartialInsert())
+    const failing: MatchReportsService = {
+      ...service,
+      async refreshPersonalMatchReport() {
+        return {
+          ok: false,
+          error: { kind: 'network', code: null, message: 'нет сети' },
+        }
+      },
+    }
+
+    const result = await loadOrCreatePersonalReport(
+      makeDeps({
+        service: failing,
+        fetchMatch: makeFakeFetch().fetchMatch,
+        parseDetailedData: async () => ({
+          kind: 'parsed',
+          match: normalizeMatch(RAW_MATCH),
+          jobId: '99',
+        }),
+      }),
+      MATCH_ID,
+    )
+    const { view, save } = expectReport(result)
+
+    expect(save.kind).toBe('refresh-failed')
+    expect(view.id).toBe('row-1')
+    expect(store.rows).toHaveLength(1)
+  })
+
+  it('прекращает работу при уходе со страницы во время обработки реплея', async () => {
+    const controller = new AbortController()
+
+    const result = await loadOrCreatePersonalReport(
+      makeDeps({
+        service: createMatchReportsService(makeFakeClient().client),
+        parseDetailedData: async () => {
+          controller.abort()
+          return { kind: 'aborted' }
+        },
+      }),
+      MATCH_ID,
+      controller.signal,
+    )
+
+    expect(result.status).toBe('aborted')
+  })
+
+  it('не запрашивает обработку повторно, если сохранённый отчёт уже подробный', async () => {
+    const { client } = makeFakeClient()
+    const service = createMatchReportsService(client)
+    await service.savePersonalMatchReport(buildInsert())
+    let parseCalls = 0
+
+    for (let index = 0; index < 2; index += 1) {
+      await loadOrCreatePersonalReport(
+        makeDeps({
+          service,
+          fetchMatch: makeFakeFetch().fetchMatch,
+          parseDetailedData: async ({ match }) => {
+            parseCalls += 1
+            return { kind: 'not-needed', match }
+          },
+        }),
+        MATCH_ID,
+      )
+    }
+
+    expect(parseCalls).toBe(0)
   })
 })

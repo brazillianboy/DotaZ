@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import AnalysisReport from '../components/AnalysisReport'
 import MatchSummary from '../components/MatchSummary'
 import LaneReport from '../components/LaneReport'
+import MatchItems from '../components/MatchItems'
+import MatchParseNotice from '../components/MatchParseNotice'
 import PlayerSelector from '../components/PlayerSelector'
 import PlayerStats from '../components/PlayerStats'
 import ReportPersistenceNotice from '../components/ReportPersistenceNotice'
@@ -15,6 +17,13 @@ import {
   type MatchReportFlowPhase,
   type ReportSaveState,
 } from '../lib/matchReportFlow'
+import {
+  ensureDetailedMatchData,
+  type MatchParseOutcome,
+  type MatchParsePhase,
+} from '../lib/matchParseFlow'
+import { createBrowserParseAttemptStore } from '../lib/replayParsing'
+import { fetchParseJobStatus, requestReplayParse, resolveOpenDotaApiKey } from '../lib/opendotaParse'
 import {
   createMatchReportsService,
   findStoredPlayerAnalysis,
@@ -39,8 +48,22 @@ type MatchState =
 const PHASE_KEYS: Record<MatchReportFlowPhase, TranslationKey> = {
   'checking-report': 'match.phase.checkingReport',
   'fetching-match': 'match.phase.fetching',
+  'requesting-parse': 'match.phase.requestingParse',
+  'waiting-parse': 'match.phase.waitingParse',
+  refetching: 'match.phase.refetching',
   analyzing: 'match.phase.analyzing',
   saving: 'match.phase.saving',
+}
+
+/**
+ * Фазы автоматической обработки реплея (Task 14) отображаются теми же подписями,
+ * что и шаги отчёта: пользователь видит единый прогресс без «второй» шкалы.
+ */
+const PARSE_PHASE_TO_FLOW: Record<MatchParsePhase, MatchReportFlowPhase> = {
+  'inspecting-data': 'fetching-match',
+  'requesting-parse': 'requesting-parse',
+  'waiting-parse': 'waiting-parse',
+  refetching: 'refetching',
 }
 
 /**
@@ -66,9 +89,27 @@ export default function MatchPage() {
   // Устойчивый идентификатор выбранного участника — player_slot.
   const [selectedSlot, setSelectedSlot] = useState<number | null>(null)
   const [retrying, setRetrying] = useState(false)
+  /** Итог автоматической обработки реплея (Task 14) для честного статуса в интерфейсе. */
+  const [parseOutcome, setParseOutcome] = useState<MatchParseOutcome | null>(null)
+  /**
+   * Обработчик фаз парсинга передаётся в поток через ссылку: сам поток создаётся
+   * в `useMemo`, а обновлять состояние React можно только из актуального эффекта.
+   */
+  const parsePhaseHandler = useRef<((phase: MatchParsePhase) => void) | null>(null)
 
   /** Достоверное состояние сессии: пока сессия восстанавливается, работать нельзя. */
   const authStatus = authLoading ? 'loading' : user !== null ? 'authenticated' : 'anonymous'
+
+  /** Записи о запущенных задачах обработки: дубликаты запросов не создаются. */
+  const parseStore = useMemo(
+    () => createBrowserParseAttemptStore(typeof window === 'undefined' ? null : window.localStorage),
+    [],
+  )
+  /** Необязательный ключ OpenDota из окружения сборки (только повышение лимитов). */
+  const parseApiKey = useMemo(
+    () => resolveOpenDotaApiKey(import.meta.env as unknown as Record<string, unknown>),
+    [],
+  )
 
   const service = useMemo(() => {
     const supabase = getSupabase()
@@ -77,15 +118,30 @@ export default function MatchPage() {
       : createMatchReportsService(createSupabaseMatchReportsClient(supabase))
   }, [isConfigured])
 
-  const flowDeps = useMemo<Omit<MatchReportFlowDeps, 'onPhase'>>(
+  const flowDeps = useMemo<Omit<MatchReportFlowDeps, 'onPhase' | 'onParseOutcome'>>(
     () => ({
       authStatus,
       userId: user?.id ?? null,
       service,
       fetchMatch: fetchMatchById,
+      // Автоматическая обработка реплея: запрос отправляется без отдельной кнопки.
+      parseDetailedData: ({ matchId: id, rawMatch, match: normalized, signal: innerSignal }) =>
+        ensureDetailedMatchData({
+          matchId: id,
+          rawMatch,
+          match: normalized,
+          fetchMatch: fetchMatchById,
+          requestParse: requestReplayParse,
+          fetchJobStatus: fetchParseJobStatus,
+          now: () => new Date(),
+          store: parseStore,
+          apiKey: parseApiKey,
+          signal: innerSignal,
+          onPhase: (next) => parsePhaseHandler.current?.(next),
+        }),
       now: () => new Date(),
     }),
-    [authStatus, user?.id, service],
+    [authStatus, user?.id, service, parseStore, parseApiKey],
   )
 
   useEffect(() => {
@@ -111,6 +167,13 @@ export default function MatchPage() {
     setSelectedSlot(null)
     setPhase('checking-report')
     setRetrying(false)
+    setParseOutcome(null)
+    // Фазы автоматической обработки реплея показываются теми же подписями прогресса.
+    parsePhaseHandler.current = (next) => {
+      if (active) {
+        setPhase(PARSE_PHASE_TO_FLOW[next])
+      }
+    }
 
     loadOrCreatePersonalReport(
       {
@@ -118,6 +181,11 @@ export default function MatchPage() {
         onPhase: (next) => {
           if (active) {
             setPhase(next)
+          }
+        },
+        onParseOutcome: (outcome) => {
+          if (active) {
+            setParseOutcome(outcome)
           }
         },
       },
@@ -152,6 +220,7 @@ export default function MatchPage() {
     return () => {
       active = false
       controller.abort()
+      parsePhaseHandler.current = null
     }
   }, [matchId, attempt, authStatus, flowDeps])
 
@@ -199,6 +268,7 @@ export default function MatchPage() {
               onRetrySave={handleRetrySave}
               retrying={retrying}
             />
+            <MatchParseNotice outcome={parseOutcome} />
             <div className="match-details__columns">
               <PlayerSelector
                 players={state.view.match.players}
@@ -210,6 +280,7 @@ export default function MatchPage() {
                 <LaneReport player={selectedPlayer} />
               </div>
             </div>
+            <MatchItems player={selectedPlayer} />
             <AnalysisReport
               match={state.view.match}
               player={selectedPlayer}

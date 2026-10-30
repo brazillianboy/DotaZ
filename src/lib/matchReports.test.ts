@@ -14,8 +14,10 @@ import {
   createMatchReportsService,
   determineReportStatus,
   findStoredPlayerAnalysis,
+  isSnapshotDetailed,
   parseStoredMatchReport,
   rulesVersionNotice,
+  shouldRefreshStoredReport,
   type MatchReportInsert,
   type MatchReportsClient,
   type ReportDbError,
@@ -40,9 +42,9 @@ const RAW_PLAYER_RADIANT = {
   gold_per_min: 619,
   xp_per_min: 786,
   last_hits: 238,
-  lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47],
-  gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864],
-  xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907],
+  lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47, 53, 57, 62, 70, 86],
+  gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864, 4191, 4520, 4890, 5300, 5860],
+  xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907, 3201, 3501, 3820, 4150, 4512],
   kills_log: [{ time: 102 }, { time: 540 }],
   deaths_log: [{ time: 186 }],
   purchase_log: [{ time: 120, key: 'boots' }],
@@ -56,7 +58,7 @@ const RAW_PLAYER_DIRE = {
   deaths: 9,
   assists: 2,
   last_hits: 12,
-  lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12],
+  lh_t: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 15, 19, 24, 30, 41],
 }
 
 const RAW_MATCH = {
@@ -68,6 +70,33 @@ const RAW_MATCH = {
 
 function buildMatch(raw: unknown = RAW_MATCH): NormalizedMatch {
   return normalizeMatch(raw)
+}
+
+/** Полный (replay-derived) набор подробных полей участника для Task 14. */
+const FULL_TIMELINE = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16]
+
+function detailedPlayer(slot: number) {
+  return {
+    player_slot: slot,
+    hero_id: 6,
+    last_hits: 200,
+    lh_t: FULL_TIMELINE,
+    gold_t: FULL_TIMELINE,
+    xp_t: FULL_TIMELINE,
+    kills_log: [{ time: 120 }],
+    deaths_log: [{ time: 300 }],
+    purchase_log: [
+      { time: 120, key: 'magic_wand' },
+      { time: 400, key: 'power_treads' },
+    ],
+  }
+}
+
+const DETAILED_MATCH = {
+  match_id: 9007760151,
+  duration: 2069,
+  radiant_win: true,
+  players: [detailedPlayer(0), detailedPlayer(128)],
 }
 
 interface FakeRow extends Record<string, unknown> {
@@ -117,6 +146,18 @@ function makeFakeClient() {
       }
       store.rows.push(row)
       return { data: row, error: null }
+    },
+    async updatePersonalReport(payload: MatchReportInsert) {
+      const index = store.rows.findIndex(
+        (item) => item.user_id === payload.user_id && item.match_id === payload.match_id,
+      )
+      if (index === -1) {
+        // Строки нет: обновление не подтверждено (сервис вернёт ошибку).
+        return { data: null, error: null }
+      }
+      const updated: FakeRow = { ...store.rows[index], ...payload }
+      store.rows[index] = updated
+      return { data: updated, error: null }
     },
   }
 
@@ -189,8 +230,8 @@ describe('снимки отчёта: полнота и точность данн
     expect(player.last_hits).toBe(0)
     expect(player.hero_id).toBeNull()
     expect(player.gold_per_min).toBeNull()
-    expect(player.laning.lastHitsAt10).toBeNull()
-    expect(player.laning.purchasesFirst10).toBeNull()
+    expect(player.laning.lastHits).toBeNull()
+    expect(player.laning.purchasesFirst).toBeNull()
   })
 
   it('фиксирует версию правил и атрибуцию источника', () => {
@@ -298,7 +339,7 @@ describe('валидация сохранённого отчёта', () => {
     expect(parsed.view.rulesVersion).toBe(ANALYSIS_RULES_VERSION)
     expect(parsed.view.match.players).toHaveLength(2)
     expect(parsed.view.analyses).toHaveLength(2)
-    expect(parsed.view.match.players[0].laning.lastHitsAt10).toBe(47)
+    expect(parsed.view.match.players[0].laning.lastHits).toBe(86)
   })
 
   it('отклоняет снимок с неизвестной версией формата', () => {
@@ -459,6 +500,9 @@ describe('сервис личных отчётов и ошибки базы', ()
       async insertPersonalReport() {
         return { data: null, error: { kind: 'unknown', code: null, message: 'не используется' } }
       },
+      async updatePersonalReport() {
+        return { data: null, error: { kind: 'unknown', code: null, message: 'не используется' } }
+      },
     }
     const service = createMatchReportsService(wrongClient)
 
@@ -539,5 +583,256 @@ describe('вспомогательные функции отчёта', () => {
     // Незавершённость записи в базе не подмешивается в свежий расчёт.
     expect(view.limitations.map((item) => item.code)).not.toContain('report.match_payload.missing')
     expect(view.limitations.map((item) => item.code)).not.toContain('report.analysis_payload.missing')
+  })
+})
+
+describe('Обратная совместимость снимков (интервал 10 → 15 минут)', () => {
+  /**
+   * Приводит снимок текущего формата к формату версии 1: 10-минутные поля
+   * (`…At10`/`…First10`), без интервала и без журнала покупок за матч.
+   */
+  function toLegacyV1(payload: unknown): Record<string, unknown> {
+    const snapshot = payload as {
+      match: { players: Record<string, unknown>[] }
+      [key: string]: unknown
+    }
+    return {
+      ...snapshot,
+      snapshot_version: 1,
+      match: {
+        ...snapshot.match,
+        players: snapshot.match.players.map((player) => {
+          const { purchaseLog, laning, ...rest } = player as {
+            purchaseLog?: unknown
+            laning: Record<string, unknown>
+            [key: string]: unknown
+          }
+          return {
+            ...rest,
+            laning: {
+              lastHitsAt10: laning.lastHits,
+              goldAt10: laning.gold,
+              xpAt10: laning.xp,
+              killsFirst10: laning.killsFirst,
+              deathsFirst10: laning.deathsFirst,
+              purchasesFirst10: laning.purchasesFirst,
+              laneEfficiencyPct: laning.laneEfficiencyPct,
+            },
+          }
+        }),
+      },
+    }
+  }
+
+  function legacyRow(): Record<string, unknown> {
+    const insert = buildReportInsert({
+      userId: USER_A,
+      requestedId: '9007760151',
+      match: buildMatch(),
+      fetchedAt: null,
+    })
+    const stored = JSON.parse(JSON.stringify(makeStoredRow(insert))) as Record<string, unknown>
+    return {
+      ...stored,
+      match_payload: toLegacyV1(stored.match_payload),
+      analysis_payload: {
+        ...(stored.analysis_payload as Record<string, unknown>),
+        snapshot_version: 1,
+      },
+    }
+  }
+
+  it('читает снимок версии 1 без перезаписи данных в базе', () => {
+    const parsed = parseStoredMatchReport(legacyRow())
+    expect(parsed.ok).toBe(true)
+    if (!parsed.ok) {
+      return
+    }
+    const player = parsed.view.match.players[0]
+    // 10-минутные значения сохранены как есть, но помечены интервалом 10 минут.
+    expect(player.laning.interval).toEqual({ minutes: 10, label: '00:00–10:00' })
+    expect(player.laning.lastHits).toBe(86)
+    expect(player.laning.gold).toBe(5860)
+    // Журнал покупок за матч в старом формате отсутствует — секция предметов
+    // покажет пояснение, а не выдуманные данные.
+    expect(player.purchaseLog).toBeNull()
+  })
+
+  it('новые снимки записываются в версии 2 с интервалом и журналом покупок', () => {
+    const insert = buildReportInsert({
+      userId: USER_A,
+      requestedId: '9007760151',
+      match: buildMatch(),
+      fetchedAt: null,
+    })
+    expect(insert.match_payload.snapshot_version).toBe(MATCH_REPORT_SNAPSHOT_VERSION)
+    expect(MATCH_REPORT_SNAPSHOT_VERSION).toBe(2)
+    const player = insert.match_payload.match.players[0]
+    expect(player.laning.interval).toEqual({ minutes: 15, label: '00:00–15:00' })
+    expect(player.purchaseLog).toEqual([{ time: 120, key: 'boots' }])
+  })
+
+  it('по-прежнему отклоняет снимок с неизвестной версией', () => {
+    const row = legacyRow()
+    const parsed = parseStoredMatchReport({
+      ...row,
+      match_payload: { ...(row.match_payload as object), snapshot_version: 99 },
+    })
+    expect(parsed.ok).toBe(false)
+  })
+})
+
+describe('детальность снимка и обновление отчёта подробными данными (Task 14)', () => {
+  const requestedId = '9007760151'
+
+  function viewOf(raw: unknown) {
+    return buildPendingView({
+      userId: USER_A,
+      requestedId,
+      match: normalizeMatch(raw),
+      fetchedAt: '2026-10-25T10:00:00.000Z',
+    })
+  }
+
+  it('считает детальным только снимок с журналом покупок и таймлайнами у всех участников', () => {
+    expect(isSnapshotDetailed(viewOf(DETAILED_MATCH))).toBe(true)
+    expect(isSnapshotDetailed(viewOf(RAW_MATCH))).toBe(false)
+  })
+
+  it('обновляет отчёт только при подтверждённом улучшении данных', () => {
+    const storedPartial = viewOf(RAW_MATCH)
+    const freshDetailed = viewOf(DETAILED_MATCH)
+
+    // Улучшение: раньше подробностей не было, теперь есть.
+    expect(shouldRefreshStoredReport(storedPartial, freshDetailed)).toBeNull()
+    // Сохранённый отчёт уже подробный: перезапись не нужна.
+    expect(shouldRefreshStoredReport(freshDetailed, freshDetailed)).toBe('stored-detailed')
+    // Новые данные не детальные: перезаписи нет.
+    expect(shouldRefreshStoredReport(storedPartial, viewOf(RAW_MATCH))).toBe('not-detailed')
+    // Незавершённая запись не обновляется автоматически.
+    expect(
+      shouldRefreshStoredReport({ ...storedPartial, status: 'pending' }, freshDetailed),
+    ).toBe('not-usable')
+    // Данные хуже сохранённых (меньше участников) не принимаются.
+    const onePlayer = viewOf({ ...DETAILED_MATCH, players: [detailedPlayer(0)] })
+    expect(shouldRefreshStoredReport(storedPartial, onePlayer)).toBe('worse-data')
+    // Другой матч не может заменить сохранённый отчёт.
+    expect(
+      shouldRefreshStoredReport(storedPartial, { ...freshDetailed, matchId: '111' }),
+    ).toBe('worse-data')
+  })
+
+  it('обновляет только собственную строку и не создаёт дубликатов', async () => {
+    const { store, client } = makeFakeClient()
+    const service = createMatchReportsService(client)
+
+    const first = buildReportInsert({
+      userId: USER_A,
+      requestedId,
+      match: normalizeMatch(RAW_MATCH),
+      fetchedAt: '2026-10-25T10:00:00.000Z',
+    })
+    await service.savePersonalMatchReport(first)
+    expect(store.rows).toHaveLength(1)
+
+    const detailed = buildReportInsert({
+      userId: USER_A,
+      requestedId,
+      match: normalizeMatch(DETAILED_MATCH),
+      fetchedAt: '2026-10-26T10:00:00.000Z',
+    })
+    const refreshed = await service.refreshPersonalMatchReport(detailed)
+
+    expect(refreshed.ok).toBe(true)
+    if (refreshed.ok) {
+      expect(refreshed.report.matchId).toBe(requestedId)
+      expect(isSnapshotDetailed(refreshed.report)).toBe(true)
+    }
+    expect(store.rows).toHaveLength(1)
+    expect(store.rows[0].user_id).toBe(USER_A)
+  })
+
+  it('не объявляет успех, если строка не обновлена базой', async () => {
+    const { client } = makeFakeClient()
+    const service = createMatchReportsService(client)
+
+    const refreshed = await service.refreshPersonalMatchReport(
+      buildReportInsert({
+        userId: USER_A,
+        requestedId,
+        match: normalizeMatch(DETAILED_MATCH),
+        fetchedAt: null,
+      }),
+    )
+
+    expect(refreshed.ok).toBe(false)
+    if (!refreshed.ok) {
+      expect(refreshed.error.kind).toBe('invalid_payload')
+    }
+  })
+
+  it('отклоняет чужую строку и строку другого матча', async () => {
+    const ownRow = buildReportInsert({
+      userId: USER_A,
+      requestedId,
+      match: normalizeMatch(RAW_MATCH),
+      fetchedAt: null,
+    })
+    const foreignRow = {
+      ...buildReportInsert({
+        userId: USER_B,
+        requestedId,
+        match: normalizeMatch(RAW_MATCH),
+        fetchedAt: null,
+      }),
+      id: 'row-foreign',
+      created_at: null,
+      updated_at: null,
+    }
+    const otherMatchRow = {
+      ...ownRow,
+      match_id: '1234567890',
+      id: 'row-other',
+      created_at: null,
+      updated_at: null,
+    }
+
+    const foreignClient: MatchReportsClient = {
+      async selectPersonalReport() {
+        return { data: null, error: null }
+      },
+      async insertPersonalReport() {
+        return { data: null, error: { kind: 'unknown', code: null, message: 'не используется' } }
+      },
+      async updatePersonalReport() {
+        return { data: foreignRow, error: null }
+      },
+    }
+    const foreignResult = await createMatchReportsService(
+      foreignClient,
+    ).refreshPersonalMatchReport(ownRow)
+    expect(foreignResult.ok).toBe(false)
+    if (!foreignResult.ok) {
+      expect(foreignResult.error.kind).toBe('permission')
+    }
+
+    const otherMatchClient: MatchReportsClient = {
+      async selectPersonalReport() {
+        return { data: null, error: null }
+      },
+      async insertPersonalReport() {
+        return { data: null, error: { kind: 'unknown', code: null, message: 'не используется' } }
+      },
+      async updatePersonalReport() {
+        return { data: otherMatchRow, error: null }
+      },
+    }
+    const otherMatchResult = await createMatchReportsService(
+      otherMatchClient,
+    ).refreshPersonalMatchReport(ownRow)
+    expect(otherMatchResult.ok).toBe(false)
+    if (!otherMatchResult.ok) {
+      expect(otherMatchResult.error.kind).toBe('invalid_payload')
+    }
   })
 })

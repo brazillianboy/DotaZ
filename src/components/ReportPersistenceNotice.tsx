@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 
 import { ANALYSIS_RULES_VERSION } from '../lib/analysisRules'
 import type { ReportSaveState } from '../lib/matchReportFlow'
-import { rulesVersionNotice, type MatchReportView } from '../lib/matchReports'
+import { rulesVersionNotice, type MatchReportView, type ReportRefreshSkipReason } from '../lib/matchReports'
 import { localizeLimitation } from '../i18n/analysisText'
 import { useI18n } from '../i18n/I18nContext'
 import type { TranslationKey } from '../i18n/translations'
@@ -22,6 +22,14 @@ interface SavePresentation {
   badgeClass: string
   summary: TranslationKey
   alert: string | null
+}
+
+/** Пояснение к случаю, когда сохранённый отчёт не обновлялся подробными данными. */
+const REFRESH_SKIP_SUMMARY: Record<ReportRefreshSkipReason, TranslationKey> = {
+  'not-usable': 'persistence.refreshSkipped.notUsable',
+  'stored-detailed': 'persistence.refreshSkipped.storedDetailed',
+  'not-detailed': 'persistence.refreshSkipped.notDetailed',
+  'worse-data': 'persistence.refreshSkipped.worseData',
 }
 
 /**
@@ -84,6 +92,27 @@ function describeSave(save: ReportSaveState): SavePresentation {
         badge: 'persistence.failed.badge',
         badgeClass: 'badge badge--warn',
         summary: 'persistence.failed.summary',
+        alert: save.error.message,
+      }
+    case 'refreshed':
+      return {
+        badge: 'persistence.refreshed.badge',
+        badgeClass: 'badge badge--ok',
+        summary: 'persistence.refreshed.summary',
+        alert: null,
+      }
+    case 'refresh-skipped':
+      return {
+        badge: 'persistence.refreshSkipped.badge',
+        badgeClass: 'badge badge--warn',
+        summary: REFRESH_SKIP_SUMMARY[save.reason],
+        alert: null,
+      }
+    case 'refresh-failed':
+      return {
+        badge: 'persistence.failed.badge',
+        badgeClass: 'badge badge--warn',
+        summary: 'persistence.refreshFailed.summary',
         alert: save.error.message,
       }
   }

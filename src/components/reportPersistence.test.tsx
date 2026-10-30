@@ -29,9 +29,9 @@ const RAW_MATCH = {
       deaths: 3,
       assists: 15,
       last_hits: 238,
-      lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47],
-      gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864],
-      xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907],
+      lh_t: [0, 3, 7, 10, 11, 17, 23, 28, 33, 40, 47, 53, 57, 62, 70, 86],
+      gold_t: [0, 287, 779, 1029, 1540, 1906, 2379, 2684, 3037, 3438, 3864, 4191, 4520, 4890, 5300, 5860],
+      xp_t: [0, 118, 408, 765, 1068, 1306, 1792, 2074, 2380, 2661, 2907, 3201, 3501, 3820, 4150, 4512],
       kills_log: [{ time: 102 }],
       deaths_log: [{ time: 186 }],
       purchase_log: [{ time: 120, key: 'boots' }],
@@ -187,6 +187,6 @@ describe('AnalysisReport — показ сохранённого анализа'
       <AnalysisReport match={view.match} player={view.match.players[0]} />,
     )
     expect(html).toContain(`Версия правил анализа: ${ANALYSIS_RULES_VERSION}`)
-    expect(html).toContain('Добивания к 10:00 (lh_t[10]) — 47.')
+    expect(html).toContain('Добивания к 15:00 (lh_t[15]) — 86.')
   })
 })

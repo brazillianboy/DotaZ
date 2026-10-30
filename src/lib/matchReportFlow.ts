@@ -1,13 +1,18 @@
 import { normalizeMatch } from './normalizeMatch'
 import type { OpenDotaError, OpenDotaMatchResult } from './opendota'
+import type { MatchParseOutcome } from './matchParseFlow'
+import type { NormalizedMatch } from '../types/match'
 import {
   USABLE_REPORT_STATUSES,
   buildPendingView,
   buildReportInsert,
+  isSnapshotDetailed,
+  shouldRefreshStoredReport,
   type MatchReportView,
   type MatchReportsService,
   type MatchReportStatus,
   type ReportDbError,
+  type ReportRefreshSkipReason,
 } from './matchReports'
 
 /**
@@ -15,11 +20,14 @@ import {
  *
  * Порядок работы страницы матча:
  *   1) дождаться достоверного состояния сессии;
- *   2) проверить личный отчёт в базе — сохранённый `ready`/`partial` используется
- *      сразу, без обращения к OpenDota и без пересчёта правил;
- *   3) если отчёта нет — получить матч у OpenDota, нормализовать и проанализировать;
- *   4) сохранить новый отчёт вставкой (без перезаписи существующих строк);
- *   5) при конфликте уникальности — прочитать существующую запись (её и показать).
+ *   2) проверить личный отчёт в базе — подробный сохранённый `ready`/`partial`
+ *      используется сразу, без обращения к OpenDota и без пересчёта правил;
+ *   3) иначе получить матч у OpenDota; при отсутствии подробных данных автоматически
+ *      запустить обработку реплея (Task 14) и нормализовать полученный результат;
+ *   4) проанализировать всех участников существующим движком правил;
+ *   5) сохранить новый отчёт вставкой (без перезаписи существующих строк) либо
+ *      обновить ранее сохранённый отчёт — только при подтверждённом улучшении данных;
+ *   6) при конфликте уникальности — прочитать существующую запись (её и показать).
  *
  * Модуль не содержит React и не создаёт клиентов: зависимости передаются снаружи,
  * поэтому сценарии (включая гонки и сбои) проверяются юнит-тестами без живой базы.
@@ -29,7 +37,14 @@ import {
 export type AuthStatus = 'loading' | 'authenticated' | 'anonymous'
 
 /** Шаги работы, отображаемые в интерфейсе. */
-export type MatchReportFlowPhase = 'checking-report' | 'fetching-match' | 'analyzing' | 'saving'
+export type MatchReportFlowPhase =
+  | 'checking-report'
+  | 'fetching-match'
+  | 'requesting-parse'
+  | 'waiting-parse'
+  | 'refetching'
+  | 'analyzing'
+  | 'saving'
 
 /** Результат работы с сохранением отчёта. */
 export type ReportSaveState =
@@ -41,6 +56,12 @@ export type ReportSaveState =
   | { kind: 'database-error'; error: ReportDbError }
   | { kind: 'unresolved'; status: Extract<MatchReportStatus, 'pending' | 'error'>; message: string }
   | { kind: 'save-failed'; error: ReportDbError }
+  /** Существующий отчёт обновлён подробными данными (только своя строка). */
+  | { kind: 'refreshed' }
+  /** Обновление не выполнялось: сохранённый отчёт оставлен как есть. */
+  | { kind: 'refresh-skipped'; reason: ReportRefreshSkipReason }
+  /** Обновление не подтверждено базой — сохранённый отчёт не изменён. */
+  | { kind: 'refresh-failed'; error: ReportDbError }
 
 export type MatchReportFlowResult =
   | { status: 'waiting-auth' }
@@ -56,6 +77,19 @@ export interface MatchReportFlowDeps {
   /** Сервис личных отчётов; `null`, если Supabase не настроен. */
   service: MatchReportsService | null
   fetchMatch: (matchId: string, signal?: AbortSignal) => Promise<OpenDotaMatchResult>
+  /**
+   * Автоматическая обработка реплея (Task 14): вызывается после загрузки матча и
+   * возвращает данные (возможно, дополненные) либо честный статус. Отсутствие
+   * функции означает «обработка не подключена» — поведение прежнее.
+   */
+  parseDetailedData?: (params: {
+    matchId: string
+    rawMatch: unknown
+    match: NormalizedMatch
+    signal?: AbortSignal
+  }) => Promise<MatchParseOutcome>
+  /** Итог автоматической обработки — для честного статуса в интерфейсе. */
+  onParseOutcome?: (outcome: MatchParseOutcome) => void
   /** Текущее время в момент успешного получения данных OpenDota. */
   now: () => Date
   onPhase?: (phase: MatchReportFlowPhase) => void
@@ -168,12 +202,19 @@ export async function loadOrCreatePersonalReport(
   let unresolved: 'pending' | 'error' | null = null
   let storedError: ReportDbError | null = null
 
-  // 2. Поиск личного отчёта: сохранённый отчёт имеет приоритет над OpenDota.
+  // 2. Поиск личного отчёта: подробный сохранённый отчёт имеет приоритет над OpenDota.
+  let storedView: MatchReportView | null = null
   if (isAuthenticated && deps.service !== null) {
     deps.onPhase?.('checking-report')
     const stored = await checkStoredReport(deps.service, userId as string, matchId)
     if (stored.kind === 'usable') {
-      return { status: 'report', view: stored.view, save: { kind: 'stored' } }
+      if (isSnapshotDetailed(stored.view)) {
+        return { status: 'report', view: stored.view, save: { kind: 'stored' } }
+      }
+      // Отчёт без подробных данных не блокирует автоматическую обработку реплея:
+      // строка не перезаписывается, но страница пытается получить подробные данные
+      // и обновляет отчёт только при подтверждённом улучшении (см. шаг 7).
+      storedView = stored.view
     }
     if (stored.kind === 'invalid') {
       return { status: 'invalid-stored-report', message: stored.message }
@@ -198,9 +239,25 @@ export async function loadOrCreatePersonalReport(
     return { status: 'aborted' }
   }
 
-  // 4. Нормализация (Task 6) и анализ (Task 9) — существующие чистые функции.
+  // 4. Автоматическая обработка реплея (Task 14): если подробных данных нет,
+  //    запрос обработки отправляется без отдельной кнопки и без участия пользователя.
+  let match = normalizeMatch(fetched.match)
+  if (deps.parseDetailedData !== undefined) {
+    const outcome = await deps.parseDetailedData({
+      matchId,
+      rawMatch: fetched.match,
+      match,
+      signal,
+    })
+    deps.onParseOutcome?.(outcome)
+    if (outcome.kind === 'aborted' || signal?.aborted === true) {
+      return { status: 'aborted' }
+    }
+    match = outcome.match
+  }
+
+  // 5. Нормализация (Task 6) и анализ (Task 9) — существующие чистые функции.
   deps.onPhase?.('analyzing')
-  const match = normalizeMatch(fetched.match)
   const fetchedAt = deps.now().toISOString()
   const freshView = (): MatchReportView =>
     buildPendingView({ userId, requestedId: matchId, match, fetchedAt })
@@ -232,7 +289,39 @@ export async function loadOrCreatePersonalReport(
     }
   }
 
-  // 6. Сохранение нового отчёта вставкой (без upsert и без перезаписи).
+  // 6. Обновление существующего отчёта подробными данными: только собственная
+  //    строка, только при подтверждённом улучшении, без создания дубликатов.
+  if (storedView !== null) {
+    const skipReason = shouldRefreshStoredReport(storedView, freshView())
+    if (skipReason !== null) {
+      return {
+        status: 'report',
+        view: storedView,
+        save: { kind: 'refresh-skipped', reason: skipReason },
+      }
+    }
+    deps.onPhase?.('saving')
+    const refreshed = await deps.service.refreshPersonalMatchReport(
+      buildReportInsert({
+        userId: userId as string,
+        requestedId: matchId,
+        match,
+        fetchedAt,
+      }),
+    )
+    if (refreshed.ok) {
+      return { status: 'report', view: refreshed.report, save: { kind: 'refreshed' } }
+    }
+    // Обновление не подтверждено базой: сохранённый отчёт остаётся как есть,
+    // успех не объявляется.
+    return {
+      status: 'report',
+      view: storedView,
+      save: { kind: 'refresh-failed', error: refreshed.error },
+    }
+  }
+
+  // 7. Сохранение нового отчёта вставкой (без upsert и без перезаписи).
   deps.onPhase?.('saving')
   const payload = buildReportInsert({
     userId: userId as string,

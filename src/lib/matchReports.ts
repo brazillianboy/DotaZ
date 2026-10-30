@@ -6,7 +6,15 @@ import type {
   AnalysisRecommendation,
   PlayerAnalysis,
 } from '../types/analysis'
-import type { LaningPurchase, LaningStageData, NormalizedMatch, NormalizedPlayer } from '../types/match'
+import type {
+  LaningInterval,
+  LaningPurchase,
+  LaningStageData,
+  NormalizedMatch,
+  NormalizedPlayer,
+} from '../types/match'
+import { buildLaningInterval, LANING_INTERVAL_MINUTES } from './laning'
+import { inspectDetailedData } from './replayParsing'
 
 /**
  * Личные отчёты о матчах (Task 11): типы, правила сборки снимков, валидация
@@ -23,8 +31,15 @@ import type { LaningPurchase, LaningStageData, NormalizedMatch, NormalizedPlayer
  * адаптер (`matchReportsSupabase.ts`), оркестрация — в `matchReportFlow.ts`.
  */
 
-/** Версия формата снимка отчёта (меняется при несовместимом изменении структуры). */
-export const MATCH_REPORT_SNAPSHOT_VERSION = 1
+/**
+ * Версия формата снимка отчёта.
+ * Версия 2 добавила интервал ранней стадии (`interval`) и полный журнал покупок
+ * за матч (`purchaseLog`); структура осталась аддитивной.
+ */
+export const MATCH_REPORT_SNAPSHOT_VERSION = 2
+
+/** Версии снимков, которые приложение умеет читать (обратная совместимость). */
+export const SUPPORTED_MATCH_REPORT_SNAPSHOT_VERSIONS: readonly number[] = [1, 2]
 
 /** Атрибуция источника данных отчёта. */
 export const MATCH_REPORT_SOURCE = 'OpenDota' as const
@@ -93,18 +108,27 @@ export interface MatchReportView {
   limitations: AnalysisLimitation[]
 }
 
-/** Глубокая копия стадии линии: снимок не должен разделять ссылки с исходными данными. */
+/** Глубокая копия ранней стадии: снимок не должен разделять ссылки с исходными данными. */
 function cloneLaning(laning: LaningStageData): LaningStageData {
   const purchases: LaningPurchase[] | null =
-    laning.purchasesFirst10 === null
+    laning.purchasesFirst === null
       ? null
-      : laning.purchasesFirst10.map((purchase) => ({ time: purchase.time, key: purchase.key }))
-  return { ...laning, purchasesFirst10: purchases }
+      : laning.purchasesFirst.map((purchase) => ({ time: purchase.time, key: purchase.key }))
+  return { ...laning, interval: { ...laning.interval }, purchasesFirst: purchases }
+}
+
+/** Глубокая копия журнала покупок за матч. */
+function clonePurchaseLog(log: LaningPurchase[] | null): LaningPurchase[] | null {
+  return log === null ? null : log.map((purchase) => ({ time: purchase.time, key: purchase.key }))
 }
 
 /** Глубокая копия участника: сохраняются все поля, включая `null`. */
 function clonePlayer(player: NormalizedPlayer): NormalizedPlayer {
-  return { ...player, laning: cloneLaning(player.laning) }
+  return {
+    ...player,
+    purchaseLog: clonePurchaseLog(player.purchaseLog),
+    laning: cloneLaning(player.laning),
+  }
 }
 
 /**
@@ -247,6 +271,53 @@ export function buildPendingView(params: {
     analyses: buildAnalysisSnapshot(params.match).players,
     limitations: snapshot.limitations,
   }
+}
+
+/**
+ * Детальность снимка отчёта: подтверждены ли подробные (replay-derived) данные.
+ *
+ * Детальный снимок содержит журнал покупок и таймлайны ранней стадии у всех
+ * участников. Только такой снимок может заменить ранее сохранённый: обновление
+ * «на глаз» и перезапись неполными данными не выполняются.
+ */
+export function isSnapshotDetailed(view: MatchReportView): boolean {
+  return inspectDetailedData(view.match).detailed
+}
+
+/** Причина, по которой сохранённый отчёт не обновляется. */
+export type ReportRefreshSkipReason =
+  | 'not-usable'
+  | 'stored-detailed'
+  | 'not-detailed'
+  | 'worse-data'
+
+/**
+ * Нужно ли обновлять сохранённый отчёт новыми (более подробными) данными.
+ *
+ * `null` — обновление допустимо и осмысленно. Любая причина означает «оставляем
+ * сохранённый отчёт как есть»: перезапись выполняется только при строгом
+ * улучшении данных (появились подробные поля, число участников не уменьшилось).
+ */
+export function shouldRefreshStoredReport(
+  stored: MatchReportView,
+  fresh: MatchReportView,
+): ReportRefreshSkipReason | null {
+  if (!USABLE_REPORT_STATUSES.includes(stored.status)) {
+    return 'not-usable'
+  }
+  if (isSnapshotDetailed(stored)) {
+    return 'stored-detailed'
+  }
+  if (!isSnapshotDetailed(fresh)) {
+    return 'not-detailed'
+  }
+  if (fresh.matchId !== stored.matchId) {
+    return 'worse-data'
+  }
+  if (fresh.match.players.length < stored.match.players.length) {
+    return 'worse-data'
+  }
+  return null
 }
 
 /** Анализ конкретного участника из снимка отчёта (без пересчёта правил). */
@@ -580,25 +651,71 @@ function parsePurchases(value: unknown): Parse<LaningPurchase[] | null> {
   return { ok: true, value: result }
 }
 
-/** Стадия линии: сохраняются как числа, так и `null` (без подстановки нулей). */
+/** Значение, отсутствующее в снимке, трактуется как `null` (обратная совместимость). */
+function parseOptionalNullableNumber(value: unknown): Parse<number | null> {
+  return value === undefined ? { ok: true, value: null } : parseNullableNumber(value)
+}
+
+/** Журнал покупок, отсутствующий в снимке, трактуется как `null`. */
+function parseOptionalPurchases(value: unknown): Parse<LaningPurchase[] | null> {
+  return value === undefined ? { ok: true, value: null } : parsePurchases(value)
+}
+
+/**
+ * Интервал ранней стадии.
+ * Отсутствует в снимках версии 1 → подставляется интервал по умолчанию (10 минут),
+ * чтобы старые отчёты отображались с корректными подписями.
+ */
+function parseLaningInterval(value: unknown, fallbackMinutes: number): Parse<LaningInterval> {
+  if (value === undefined || value === null) {
+    return { ok: true, value: buildLaningInterval(fallbackMinutes) }
+  }
+  if (!isRecord(value)) {
+    return { ok: false }
+  }
+  const minutes = parseNullableInteger(value.minutes)
+  const label = parseNonEmptyString(value.label)
+  if (!minutes.ok || minutes.value === null || minutes.value <= 0 || !label.ok) {
+    return { ok: false }
+  }
+  return { ok: true, value: { minutes: minutes.value, label: label.value } }
+}
+
+/**
+ * Ранняя стадия: снимки версии 2 хранят интервал и интервало-нейтральные поля,
+ * снимки версии 1 — поля с суффиксом `…At10`/`…First10`.
+ *
+ * Оба формата читаются без перезаписи данных в базе: старый отчёт получает
+ * интервал `00:00–10:00`, поэтому 10-минутные значения не выдаются за 15-минутные.
+ */
 function parseLaningStageData(value: unknown): Parse<LaningStageData> {
   if (!isRecord(value)) {
     return { ok: false }
   }
-  const lastHitsAt10 = parseNullableNumber(value.lastHitsAt10)
-  const goldAt10 = parseNullableNumber(value.goldAt10)
-  const xpAt10 = parseNullableNumber(value.xpAt10)
-  const killsFirst10 = parseNullableNumber(value.killsFirst10)
-  const deathsFirst10 = parseNullableNumber(value.deathsFirst10)
-  const purchasesFirst10 = parsePurchases(value.purchasesFirst10)
-  const laneEfficiencyPct = parseNullableNumber(value.laneEfficiencyPct)
+  const isLegacy = value.lastHits === undefined && value.lastHitsAt10 !== undefined
+  const fallbackMinutes = isLegacy ? 10 : LANING_INTERVAL_MINUTES
+  const interval = parseLaningInterval(value.interval, fallbackMinutes)
+  const lastHits = parseOptionalNullableNumber(isLegacy ? value.lastHitsAt10 : value.lastHits)
+  const gold = parseOptionalNullableNumber(isLegacy ? value.goldAt10 : value.gold)
+  const xp = parseOptionalNullableNumber(isLegacy ? value.xpAt10 : value.xp)
+  const killsFirst = parseOptionalNullableNumber(
+    isLegacy ? value.killsFirst10 : value.killsFirst,
+  )
+  const deathsFirst = parseOptionalNullableNumber(
+    isLegacy ? value.deathsFirst10 : value.deathsFirst,
+  )
+  const purchasesFirst = parseOptionalPurchases(
+    isLegacy ? value.purchasesFirst10 : value.purchasesFirst,
+  )
+  const laneEfficiencyPct = parseOptionalNullableNumber(value.laneEfficiencyPct)
   if (
-    !lastHitsAt10.ok ||
-    !goldAt10.ok ||
-    !xpAt10.ok ||
-    !killsFirst10.ok ||
-    !deathsFirst10.ok ||
-    !purchasesFirst10.ok ||
+    !interval.ok ||
+    !lastHits.ok ||
+    !gold.ok ||
+    !xp.ok ||
+    !killsFirst.ok ||
+    !deathsFirst.ok ||
+    !purchasesFirst.ok ||
     !laneEfficiencyPct.ok
   ) {
     return { ok: false }
@@ -606,12 +723,13 @@ function parseLaningStageData(value: unknown): Parse<LaningStageData> {
   return {
     ok: true,
     value: {
-      lastHitsAt10: lastHitsAt10.value,
-      goldAt10: goldAt10.value,
-      xpAt10: xpAt10.value,
-      killsFirst10: killsFirst10.value,
-      deathsFirst10: deathsFirst10.value,
-      purchasesFirst10: purchasesFirst10.value,
+      interval: interval.value,
+      lastHits: lastHits.value,
+      gold: gold.value,
+      xp: xp.value,
+      killsFirst: killsFirst.value,
+      deathsFirst: deathsFirst.value,
+      purchasesFirst: purchasesFirst.value,
       laneEfficiencyPct: laneEfficiencyPct.value,
     },
   }
@@ -630,6 +748,7 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
   const goldPerMin = parseNullableInteger(value.gold_per_min)
   const xpPerMin = parseNullableInteger(value.xp_per_min)
   const lastHits = parseNullableInteger(value.last_hits)
+  const purchaseLog = parseOptionalPurchases(value.purchaseLog)
   const laning = parseLaningStageData(value.laning)
   if (
     !playerSlot.ok ||
@@ -642,6 +761,7 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
     !goldPerMin.ok ||
     !xpPerMin.ok ||
     !lastHits.ok ||
+    !purchaseLog.ok ||
     !laning.ok
   ) {
     return { ok: false }
@@ -658,6 +778,7 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
       gold_per_min: goldPerMin.value,
       xp_per_min: xpPerMin.value,
       last_hits: lastHits.value,
+      purchaseLog: purchaseLog.value,
       laning: laning.value,
     },
   }
@@ -703,8 +824,15 @@ function parseNormalizedMatch(value: unknown): Parse<NormalizedMatch> {
   }
 }
 
+/** Поддерживаемая версия снимка (старые отчёты читаются, но не перезаписываются). */
+function isSupportedSnapshotVersion(value: unknown): boolean {
+  return (
+    typeof value === 'number' && SUPPORTED_MATCH_REPORT_SNAPSHOT_VERSIONS.includes(value)
+  )
+}
+
 function parseStoredMatchSnapshot(value: unknown): Parse<StoredMatchSnapshot> {
-  if (!isRecord(value) || value.snapshot_version !== MATCH_REPORT_SNAPSHOT_VERSION) {
+  if (!isRecord(value) || !isSupportedSnapshotVersion(value.snapshot_version)) {
     return { ok: false }
   }
   const match = parseNormalizedMatch(value.match)
@@ -723,7 +851,7 @@ function parseStoredMatchSnapshot(value: unknown): Parse<StoredMatchSnapshot> {
 }
 
 function parseStoredAnalysisSnapshot(value: unknown): Parse<StoredAnalysisSnapshot> {
-  if (!isRecord(value) || value.snapshot_version !== MATCH_REPORT_SNAPSHOT_VERSION) {
+  if (!isRecord(value) || !isSupportedSnapshotVersion(value.snapshot_version)) {
     return { ok: false }
   }
   const rulesVersion = parseNonEmptyString(value.rules_version)
@@ -972,6 +1100,14 @@ export interface MatchReportsClient {
   insertPersonalReport(
     payload: MatchReportInsert,
   ): Promise<{ data: unknown; error: ReportDbError | null }>
+  /**
+   * Обновление собственной строки по паре `(user_id, match_id)`.
+   * Фильтр по пользователю обязателен; чужие строки не затрагиваются ни при каких
+   * условиях (плюс серверная RLS `match_reports_update_own` как второй барьер).
+   */
+  updatePersonalReport(
+    payload: MatchReportInsert,
+  ): Promise<{ data: unknown; error: ReportDbError | null }>
 }
 
 export type ReportFetchResult =
@@ -982,9 +1118,19 @@ export type ReportSaveResult =
   | { ok: true; report: MatchReportView; created: boolean }
   | { ok: false; error: ReportDbError }
 
+/** Итог обновления существующего отчёта подробными данными. */
+export type ReportRefreshResult =
+  | { ok: true; report: MatchReportView }
+  | { ok: false; error: ReportDbError }
+
 export interface MatchReportsService {
   getPersonalMatchReport(params: { userId: string; matchId: string }): Promise<ReportFetchResult>
   savePersonalMatchReport(payload: MatchReportInsert): Promise<ReportSaveResult>
+  /**
+   * Обновление существующего отчёта (только собственного) после подтверждённого
+   * улучшения данных. Новая строка не создаётся, дубликаты не появляются.
+   */
+  refreshPersonalMatchReport(payload: MatchReportInsert): Promise<ReportRefreshResult>
 }
 
 function ownershipError(): ReportDbError {
@@ -1032,6 +1178,37 @@ export function createMatchReportsService(client: MatchReportsClient): MatchRepo
         return { ok: false, error: ownershipError() }
       }
       return { ok: true, report: parsed.view, created: true }
+    },
+
+    async refreshPersonalMatchReport(payload): Promise<ReportRefreshResult> {
+      const { data, error } = await client.updatePersonalReport(payload)
+      if (error) {
+        return { ok: false, error }
+      }
+      const parsed = parseStoredMatchReport(data)
+      if (!parsed.ok) {
+        // Обновление не подтверждено базой (например, строки больше нет):
+        // успех не объявляется.
+        return {
+          ok: false,
+          error: { kind: 'invalid_payload', code: null, message: parsed.message },
+        }
+      }
+      if (parsed.view.userId !== payload.user_id) {
+        return { ok: false, error: ownershipError() }
+      }
+      if (parsed.view.matchId !== payload.match_id) {
+        return {
+          ok: false,
+          error: {
+            kind: 'invalid_payload',
+            code: null,
+            message:
+              'Обновлённая строка отчёта относится к другому матчу — результат не подтверждён.',
+          },
+        }
+      }
+      return { ok: true, report: parsed.view }
     },
   }
 }
