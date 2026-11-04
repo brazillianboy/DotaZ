@@ -604,6 +604,82 @@ export function filterEarlyGamePurchases(
 }
 
 /**
+ * Хронологический порядок событий покупки (числовые секунды, а не строки).
+ *
+ * Сортировка **стабильная**: при равном времени сохраняется исходный порядок событий,
+ * поэтому повторные покупки одного предмета (две записи с одинаковым временем) не
+ * теряются и не меняются местами. Сравнение выполняется по числу секунд
+ * (`a.time - b.time`), а не по строковому представлению `мм:сс`: строковое сравнение
+ * дало бы неверный порядок (например, «16:40» < «15:00»).
+ *
+ * Исходный журнал НЕ изменяется: возвращается новая копия массива.
+ */
+export function sortPurchasesChronologically(
+  purchases: LaningPurchase[] | null,
+): LaningPurchase[] | null {
+  if (purchases === null) {
+    return null
+  }
+  return purchases
+    .map((purchase, index) => ({ purchase, index }))
+    .sort((left, right) =>
+      left.purchase.time === right.purchase.time
+        ? left.index - right.index
+        : left.purchase.time - right.purchase.time,
+    )
+    .map((entry) => entry.purchase)
+}
+
+/**
+ * Подпись подтверждённого времени покупки для иконки предмета: `мм:сс`.
+ *
+ * Правила (проверены по данным OpenDota):
+ *  • `time` в `purchase_log` может быть ОТРИЦАТЕЛЬНЫМ — это реальная предматчевая покупка
+ *    (предмет куплен до появления крипов). Такое время показывается как `-мм:сс` и никогда
+ *    не подменяется нулём: `00:00` означало бы покупку ровно на нулевой секунде;
+ *  • ровно `0` — подтверждённая покупка на нулевой секунде, отображается как `00:00`;
+ *  • отсутствующее время (`null`) сюда не попадает: подпись просто не выводится;
+ *  • нечисловые значения тоже не попадают: `collectPurchaseLog` отбрасывает записи без
+ *    конечного времени (весь журнал становится `null`), поэтому `NaN`/`undefined` не могут
+ *    превратиться в `00:00`.
+ */
+export function purchaseClockText(seconds: number): string {
+  const negative = seconds < 0
+  const total = Math.floor(Math.abs(seconds))
+  const minutes = Math.floor(total / 60)
+  const rest = total % 60
+  return `${negative ? '-' : ''}${String(minutes).padStart(2, '0')}:${String(rest).padStart(2, '0')}`
+}
+
+/**
+ * Первое подтверждённое время покупки предмета с указанным ключом.
+ *
+ * Используется для подписи времени прямо на иконке предмета финального инвентаря.
+ * Сопоставление идёт строго по ключу предмета: время не переносится на другой предмет
+ * и не берётся из события другого предмета или более раннего апгрейда. `null` означает,
+ * что журнал недоступен или покупка этого ключа в нём не подтверждена — тогда время
+ * не показывается вовсе (выдумывать его запрещено).
+ */
+export function firstPurchaseTime(
+  purchaseLog: LaningPurchase[] | null,
+  key: string,
+): number | null {
+  if (purchaseLog === null || key.length === 0) {
+    return null
+  }
+  let earliest: number | null = null
+  for (const purchase of purchaseLog) {
+    if (purchase.key !== key) {
+      continue
+    }
+    if (earliest === null || purchase.time < earliest) {
+      earliest = purchase.time
+    }
+  }
+  return earliest
+}
+
+/**
  * Предметы за матч: каждый отображаемый предмет один раз, время — первая
  * подтверждённая покупка. Используется политика секции за весь матч
  * (`isDisplayedInFullMatch`): собранные предметы, Bottle и базовые Boots of Speed

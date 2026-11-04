@@ -1,4 +1,1165 @@
 /* ============================================================
+   DotaZ — уточнение отчёта матча (Task 15, итерация 2): сводка, прокачка, детали
+   ============================================================ */
+
+.buildings-table {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  font-size: 12.5px;
+}
+
+.buildings-table th,
+.buildings-table td {
+  padding: 5px 8px;
+  text-align: left;
+  vertical-align: middle;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.buildings-table thead th {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+}
+
+.buildings-table tbody th {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.building-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 1px 4px 1px 0;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.building-chip__symbol {
+  font-weight: 700;
+}
+
+.building-chip__time {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.building-chip--standing {
+  background: rgba(79, 157, 105, 0.2);
+  border: 1px solid rgba(79, 157, 105, 0.5);
+  color: #cdf3d8;
+}
+
+.building-chip--destroyed {
+  background: rgba(90, 32, 38, 0.5);
+  border: 1px solid rgba(239, 48, 56, 0.45);
+  color: #ffc2c6;
+}
+
+.building-chip--unknown {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px dashed rgba(255, 255, 255, 0.3);
+  color: var(--text-secondary);
+}
+
+.building-chip--empty {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+}
+
+/* Прокачка: прокручиваемая шкала и компактные таланты. */
+.ability-steps-scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.ability-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ability-step__talent {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: rgba(239, 48, 56, 0.4);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ability-talents {
+  margin-top: 8px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.ability-talents summary {
+  cursor: pointer;
+}
+
+.ability-talents__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 6px 0 0;
+  padding-left: 18px;
+}
+
+/* Раскрываемые технические пояснения: важное остаётся видимым, детали — по запросу. */
+.technical-details {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.technical-details summary {
+  cursor: pointer;
+  color: var(--accent-hover);
+}
+
+.technical-details p {
+  margin: 6px 0 0;
+}
+
+@media (max-width: 900px) {
+  .team-table__table {
+    min-width: 1200px;
+  }
+
+  .buildings__layout {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 520px) {
+  .ability-steps {
+    flex-wrap: nowrap;
+  }
+
+  .ability-step__text {
+    max-width: 96px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .buildings__map-frame {
+    max-width: 100%;
+  }
+}
+
+/* ============================================================
+   DotaZ — уточнение отчёта матча (Task 15, итерация 2):
+   читаемые таблицы, слоты предметов с таймингом, карта зданий, прокачка
+   ============================================================ */
+
+.team-table__table {
+  min-width: 1300px;
+}
+
+.team-table__table th,
+.team-table__table td {
+  padding: 7px 10px;
+  font-size: 13.5px;
+}
+
+.team-table__hero-cell {
+  min-width: 190px;
+}
+
+.team-table__select {
+  max-width: 190px;
+  min-width: 0;
+}
+
+.team-table__hero-name {
+  display: inline-block;
+  max-width: 140px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+.team-table__cell--player {
+  min-width: 150px;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.team-table__head-num {
+  text-align: right;
+}
+
+.team-table__cell--num {
+  min-width: 64px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.team-table__cell--kda {
+  min-width: 84px;
+}
+
+.team-table__cell--items {
+  min-width: 340px;
+  text-align: left;
+}
+
+/* Выбранная строка: подсветка фоном и тонкой рамкой, без текстового бейджа. */
+.team-table__row--selected {
+  background: rgba(239, 48, 56, 0.14);
+  box-shadow: inset 0 0 0 1px rgba(239, 48, 56, 0.45);
+}
+
+.team-table__row--selected .team-table__hero-cell {
+  background: rgba(239, 48, 56, 0.18);
+}
+
+/* Слоты предметов: фиксированный размер 42×42, не сжимаются, время — на иконке. */
+.inventory-list {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  gap: 6px;
+  list-style: none;
+  margin: 0;
+  padding: 0 0 3px;
+  overflow-x: auto;
+}
+
+.item-slot {
+  position: relative;
+  flex: 0 0 auto;
+  width: 42px;
+  height: 42px;
+}
+
+.item-slot__icon {
+  display: block;
+  width: 42px;
+  height: 42px;
+  border-radius: 5px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.05);
+  object-fit: contain;
+}
+
+.item-slot__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 5px;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+  font-size: 12px;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+}
+
+/* Время покупки: компактная тёмная плашка в правом нижнем углу, внутри иконки. */
+.item-slot__time {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  max-width: calc(100% - 4px);
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgba(4, 8, 12, 0.85);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  pointer-events: none;
+}
+
+/* Карта зданий: карта — основной визуальный элемент (изображение владельца + маркеры). */
+
+.buildings__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding-top: 2px;
+}
+
+.buildings__legend-title {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+}
+
+.buildings__legend-list {
+  display: flex;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12.5px;
+}
+
+.legend-item__marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  font-size: 11px;
+}
+
+.legend-item--standing .legend-item__marker {
+  background: rgba(79, 157, 105, 0.35);
+  color: #c8f2d5;
+}
+
+.legend-item--destroyed .legend-item__marker {
+  background: rgba(90, 32, 38, 0.6);
+  color: #ff9aa0;
+}
+
+.legend-item--unknown .legend-item__marker {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px dashed rgba(255, 255, 255, 0.4);
+  color: var(--text-secondary);
+}
+
+/* ============================================================
+   DotaZ — отчёт матча (Task 15): карта зданий и адаптивность
+   ============================================================ */
+
+.buildings {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  /* Отступы секции: без них заголовок и описания прижимались к границам панели. */
+  padding: 22px;
+  box-sizing: border-box;
+}
+
+.buildings__layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 320px);
+  gap: 20px;
+  align-items: start;
+}
+
+.buildings__map {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+
+/* --- Карта зданий (Task 15, итерация 3): изображение владельца + маркеры поверх --- */
+
+/*
+ * Квадратный контейнер карты. `aspect-ratio: 1 / 1` держит пропорцию изображения, а
+ * `max-width: 100%` не даёт секции вызвать горизонтальное переполнение страницы.
+ */
+.buildings__map-frame {
+  position: relative;
+  width: 100%;
+  max-width: 560px;
+  aspect-ratio: 1 / 1;
+  margin: 0 auto;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: #0b1620;
+}
+
+/* Изображение показывается целиком: без растяжения и обрезки. */
+.buildings__map-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+/* Файл карты не найден: маркеры остаются на нейтральном фоне, подставляется пояснение. */
+.buildings__map-frame--no-image .buildings__map-image {
+  visibility: hidden;
+}
+
+.buildings__map-missing {
+  position: absolute;
+  inset: auto 14px 14px 14px;
+  margin: 0;
+  padding: 6px 9px;
+  border-radius: 8px;
+  background: rgba(8, 14, 20, 0.9);
+  border: 1px dashed rgba(255, 255, 255, 0.28);
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--text-secondary);
+}
+
+/* Маркеры: одна общая система координат — проценты от размеров изображения. */
+.buildings__markers {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.buildings__marker {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  line-height: 0;
+}
+
+.map-marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: rgba(8, 14, 20, 0.55);
+  color: #5fd18b;
+  cursor: pointer;
+}
+
+.map-marker--dire {
+  color: #f4685f;
+}
+
+.map-marker--destroyed {
+  opacity: 0.72;
+}
+
+.map-marker--unknown {
+  color: rgba(255, 255, 255, 0.75);
+}
+
+.map-marker--unknown .map-marker__glyph {
+  stroke-dasharray: 1.6 1.2;
+}
+
+.map-marker__glyph {
+  display: block;
+  width: 13px;
+  height: 13px;
+}
+
+.map-marker__cross {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #ffb0b4;
+  text-shadow: 0 0 3px rgba(0, 0, 0, 0.9);
+}
+
+.map-marker:hover,
+.map-marker:focus-visible {
+  background: rgba(8, 14, 20, 0.82);
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+/* Подсказка маркера: появляется при наведении и при фокусе с клавиатуры. */
+.map-marker__tip {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 130px;
+  max-width: 210px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: rgba(6, 12, 18, 0.96);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.45);
+  font-size: 12px;
+  line-height: 1.35;
+  text-align: left;
+  white-space: normal;
+  color: var(--text-primary);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  z-index: 3;
+}
+
+/* Маркеры у краёв карты: подсказка раскрывается внутрь, чтобы не выходить за панель. */
+.map-marker__tip--start {
+  left: 0;
+  transform: none;
+}
+
+.map-marker__tip--end {
+  left: auto;
+  right: 0;
+  transform: none;
+}
+
+.map-marker__tip-team {
+  font-weight: 700;
+  color: #9fd7ff;
+}
+
+.map-marker__tip-state {
+  color: var(--text-secondary);
+}
+
+.map-marker:hover .map-marker__tip,
+.map-marker:focus-visible .map-marker__tip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* Легенда: цвета команд + состояния. */
+.legend-item--team .legend-item__marker--team {
+  border-radius: 5px;
+}
+
+.legend-item--radiant .legend-item__marker--team {
+  background: #5fd18b;
+}
+
+.legend-item--dire .legend-item__marker--team {
+  background: #f4685f;
+}
+
+/* Короткая сводка «стоит / разрушено / неизвестно» по командам. */
+.buildings__counters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.buildings__counter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.03);
+  font-size: 13px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.buildings__counter-team {
+  font-weight: 700;
+}
+
+.buildings__counter--radiant .buildings__counter-team {
+  color: #7fdca2;
+}
+
+.buildings__counter--dire .buildings__counter-team {
+  color: #f8847c;
+}
+
+.buildings__counter-values {
+  color: var(--text-secondary);
+}
+
+/* Подробная разбивка по линиям и ярусам — внутри раскрываемого блока. */
+.buildings__tables {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: 12px;
+}
+
+/* Компактные маркеры на узких экранах: читаемость и зона нажатия сохраняются. */
+@media (max-width: 520px) {
+  .map-marker {
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+  }
+
+  .map-marker__glyph {
+    width: 11px;
+    height: 11px;
+  }
+
+  .map-marker__cross {
+    font-size: 11px;
+  }
+}
+
+.buildings__summary {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.buildings__summary-title {
+  font-size: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.buildings__team-title {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.buildings__list {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 4px 12px;
+}
+
+.buildings__item {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 13px;
+  padding: 3px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.buildings__item--destroyed .buildings__item-state {
+  color: #ff9aa0;
+}
+
+.buildings__item--standing .buildings__item-state {
+  color: #9fe0b3;
+}
+
+.buildings__item--unknown .buildings__item-state {
+  color: var(--text-secondary);
+}
+
+@media (max-width: 900px) {
+  .buildings__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .match-header__title {
+    margin-left: 0;
+    font-size: 14px;
+  }
+
+  .team-table__table {
+    min-width: 900px;
+  }
+
+  .metric-grid {
+    grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  }
+}
+
+/* ============================================================
+   DotaZ — отчёт матча (Task 15): анализ игрока и прокачка способностей
+   ============================================================ */
+
+.player-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.match-stats__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 12px;
+}
+
+.match-stats__portrait {
+  width: 64px;
+  height: 64px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.match-stats__portrait--empty {
+  display: inline-block;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+}
+
+.match-stats__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.match-stats__name {
+  font-weight: 600;
+}
+
+.match-stats__meta {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+}
+
+.metric-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin: 0;
+}
+
+.metric-card {
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.metric-card__label {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+}
+
+.metric-card__value {
+  margin: 4px 0 0;
+  font-size: 19px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.ability-build {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ability-team {
+  padding: 16px 18px;
+  border-left: 3px solid transparent;
+}
+
+.ability-team--radiant {
+  border-left-color: rgba(90, 180, 120, 0.75);
+}
+
+.ability-team--dire {
+  border-left-color: rgba(239, 48, 56, 0.75);
+}
+
+.ability-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.ability-player {
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ability-player--selected {
+  border-color: rgba(239, 48, 56, 0.55);
+  background: rgba(239, 48, 56, 0.1);
+}
+
+.ability-player__head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 4px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.ability-player__head:hover,
+.ability-player__head:focus-visible {
+  border-color: rgba(255, 255, 255, 0.25);
+  outline: none;
+}
+
+.ability-player__portrait {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.ability-player__portrait--empty {
+  display: inline-block;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+}
+
+.ability-player__names {
+  display: flex;
+  flex-direction: column;
+}
+
+.ability-player__hero {
+  font-weight: 600;
+}
+
+.ability-player__name {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.ability-player__level {
+  margin-left: auto;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+}
+
+.ability-steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+}
+
+.ability-step {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-size: 12.5px;
+}
+
+.ability-step--talent {
+  background: rgba(239, 48, 56, 0.14);
+  border-color: rgba(239, 48, 56, 0.45);
+}
+
+.ability-step__level {
+  min-width: 20px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.ability-step__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 5px;
+}
+
+.ability-step__talent {
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: rgba(239, 48, 56, 0.35);
+}
+
+/* ============================================================
+   DotaZ — отчёт матча (Task 15): шапка, таблицы команд, инвентарь
+   ============================================================ */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.match-dashboard {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.match-header {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px;
+  background:
+    linear-gradient(90deg, rgba(90, 180, 120, 0.12), rgba(239, 48, 56, 0.12)),
+    rgba(14, 22, 31, 0.92);
+}
+
+.match-header__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+}
+
+.match-header__winner {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+}
+
+.match-header__winner--radiant {
+  background: rgba(90, 180, 120, 0.18);
+  border-color: rgba(90, 180, 120, 0.55);
+  color: #b9f0c9;
+}
+
+.match-header__winner--dire {
+  background: rgba(239, 48, 56, 0.18);
+  border-color: rgba(239, 48, 56, 0.55);
+  color: #ffc9cc;
+}
+
+.match-header__winner--unknown {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+.match-header__score {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  font-weight: 800;
+  font-size: 26px;
+}
+
+.match-header__score-side {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--text-secondary);
+}
+
+.match-header__score-side--radiant {
+  color: #8fe0a8;
+}
+
+.match-header__score-side--dire {
+  color: #ff9aa0;
+}
+
+.match-header__score-sep {
+  color: var(--text-secondary);
+}
+
+.match-header__title {
+  margin-left: auto;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.match-header__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px 18px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.match-header__meta-item dt {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-secondary);
+}
+
+.match-header__meta-item dd {
+  margin: 2px 0 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.match-header__mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+.team-overview {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.team-table {
+  padding: 16px 18px;
+  border-left: 3px solid transparent;
+}
+
+.team-table--radiant {
+  border-left-color: rgba(90, 180, 120, 0.75);
+}
+
+.team-table--dire {
+  border-left-color: rgba(239, 48, 56, 0.75);
+}
+
+.team-table__count {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.team-table__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  min-width: 900px;
+}
+
+.team-table__table th,
+.team-table__table td {
+  padding: 6px 8px;
+  text-align: right;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.team-table__table thead th {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  color: var(--text-secondary);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.team-table__hero-cell {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  background: rgba(14, 22, 31, 0.96);
+  z-index: 1;
+}
+
+.team-table__select {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 6px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.team-table__select:hover,
+.team-table__select:focus-visible {
+  border-color: rgba(255, 255, 255, 0.25);
+  outline: none;
+}
+
+.team-table__portrait {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.team-table__portrait--empty {
+  display: inline-block;
+  border: 1px dashed rgba(255, 255, 255, 0.25);
+}
+
+.team-table__hero-name {
+  font-weight: 600;
+}
+
+/*
+ * Бейдж «Выбран» удалён (Task 15): выбранная строка выделяется только полупрозрачным
+ * красным фоном и тонкой рамкой — см. `.team-table__row--selected` в блоке Task 15 выше.
+ * Правила бейджа здесь намеренно отсутствуют, чтобы старый стиль не вернулся вместе с
+ * разметкой.
+ */
+
+.team-table__cell--player {
+  text-align: left;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.team-table__cell--kda {
+  font-variant-numeric: tabular-nums;
+}
+
+.team-table__no-items {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+/*
+ * Стили списка предметов живут в блоке Task 15 (`.inventory-list`, `.item-slot`,
+ * `.item-slot__icon`). Прежние правила относились к удалённой секции «предметы за матч»
+ * и перекрывали актуальные размеры слотов (28px и gap 4px), поэтому удалены.
+ */
+
+/* ============================================================
    DotaZ — страницы-заглушки, страница матча и 404 (Task 2)
    ============================================================ */
 

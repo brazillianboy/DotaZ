@@ -1,4 +1,4 @@
-import { filterEarlyGamePurchases } from '../lib/items'
+import { filterEarlyGamePurchases, itemDisplayName, sortPurchasesChronologically } from '../lib/items'
 import { hasLaningFacts, laningIntervalEndLabel } from '../lib/laning'
 import type { NormalizedPlayer } from '../types/match'
 import { useI18n } from '../i18n/I18nContext'
@@ -23,8 +23,9 @@ interface LaneReportProps {
  * Aghanim's Shard, Refresher Shard, Cheese, Block of Cheese); обычные расходники
  * (варды, Tango, Clarity, Smoke, Dust, Town Portal Scroll) скрыты. У секции за весь
  * матч политика другая — там показываются только значимые приобретения. Порядок
- * событий хронологический, повторные покупки одного предмета сохраняются как
- * отдельные события. Сырой журнал в нормализованных данных не изменяется.
+ * событий хронологический (явная сортировка по числовым секундам), повторные покупки
+ * одного предмета сохраняются как отдельные события. Сырой журнал в нормализованных
+ * данных не изменяется.
  */
 export default function LaneReport({ player }: LaneReportProps) {
   const { t, locale } = useI18n()
@@ -44,7 +45,9 @@ export default function LaneReport({ player }: LaneReportProps) {
   const interval = laning.interval.label
   const endLabel = laningIntervalEndLabel(laning.interval.minutes)
   // Политика ранней стадии 00:00–15:00: подробный список событий интервала.
-  const purchases = filterEarlyGamePurchases(laning.purchasesFirst)
+  // Порядок задаётся явной сортировкой по числовым секундам (не по строкам `мм:сс`);
+  // повторные покупки одного предмета сохраняются как отдельные события.
+  const purchases = sortPurchasesChronologically(filterEarlyGamePurchases(laning.purchasesFirst))
   /** Сколько подтверждённых покупок скрыто фильтром (обычные расходники) — честный счётчик. */
   const hiddenCount =
     laning.purchasesFirst === null || purchases === null
@@ -108,7 +111,7 @@ export default function LaneReport({ player }: LaneReportProps) {
                     data-item-key={purchase.key}
                     key={`${purchase.key}-${purchase.time}-${index}`}
                   >
-                    <span className="lane-purchase__key">{purchase.key}</span>
+                    <span className="lane-purchase__key">{itemDisplayName(purchase.key)}</span>
                     <span className="lane-purchase__time">
                       {durationText(t, Math.max(0, Math.floor(purchase.time)))}
                     </span>
@@ -124,7 +127,11 @@ export default function LaneReport({ player }: LaneReportProps) {
         </>
       )}
 
-      <p className="stub__hint">{t('laning.hint', { interval })}</p>
+      <p className="stub__hint">{t('laning.hintShort', { interval })}</p>
+      <details className="technical-details">
+        <summary>{t('common.technicalDetails')}</summary>
+        <p className="stub__hint">{t('laning.hint', { interval })}</p>
+      </details>
     </section>
   )
 }

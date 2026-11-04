@@ -12,6 +12,7 @@ import {
   buildMatchItems,
   classifyPurchaseItem,
   filterEarlyGamePurchases,
+  firstPurchaseTime,
   hasConfirmedBootsUpgrade,
   isAlwaysIncludedItem,
   isCompletedItem,
@@ -22,7 +23,10 @@ import {
   isUnknownItemKey,
   itemDisplayName,
   itemIconUrl,
+  purchaseClockText,
+  sortPurchasesChronologically,
 } from './items'
+import type { LaningPurchase } from '../types/match'
 
 /**
  * Тесты фильтрации предметов (Task 14).
@@ -359,5 +363,103 @@ describe('Классификация и каталоги', () => {
       expect(COMPONENT_ITEM_CATALOG, key).not.toContain(key)
       expect(COMPLETED_ITEM_CATALOG, key).not.toContain(key)
     }
+  })
+})
+
+describe('firstPurchaseTime — подтверждённое время покупки (Task 15)', () => {
+  it('возвращает первое подтверждённое время покупки этого ключа', () => {
+    const log = [
+      { time: 600, key: 'power_treads' },
+      { time: 300, key: 'magic_wand' },
+      { time: 900, key: 'power_treads' },
+    ]
+
+    expect(firstPurchaseTime(log, 'power_treads')).toBe(600)
+    expect(firstPurchaseTime(log, 'magic_wand')).toBe(300)
+  })
+
+  it('не переносит время другого предмета и не выдумывает значение', () => {
+    expect(firstPurchaseTime([{ time: 300, key: 'magic_wand' }], 'power_treads')).toBeNull()
+    expect(firstPurchaseTime(null, 'power_treads')).toBeNull()
+    expect(firstPurchaseTime([{ time: 300, key: 'magic_wand' }], '')).toBeNull()
+  })
+})
+
+/**
+ * Хронологический порядок событий покупки (Task 15, итерация 3).
+ *
+ * Сортировка выполняется по числовым секундам, стабильна при равном времени (повторные
+ * покупки одного предмета не теряются и не меняют порядок) и не изменяет исходный журнал.
+ */
+describe('sortPurchasesChronologically — хронология событий', () => {
+  it('выстраивает события по числовым секундам, сохраняя повторные покупки', () => {
+    const log: LaningPurchase[] = [
+      { time: 900, key: 'power_treads' },
+      { time: 300, key: 'magic_wand' },
+      { time: 592, key: 'power_treads' },
+    ]
+
+    expect(sortPurchasesChronologically(log)?.map((purchase) => purchase.time)).toEqual([
+      300, 592, 900,
+    ])
+    expect(sortPurchasesChronologically(log)?.map((purchase) => purchase.key)).toEqual([
+      'magic_wand',
+      'power_treads',
+      'power_treads',
+    ])
+  })
+
+  it('при равном времени сохраняет исходный порядок событий', () => {
+    const log: LaningPurchase[] = [
+      { time: 600, key: 'first' },
+      { time: 600, key: 'second' },
+    ]
+
+    expect(sortPurchasesChronologically(log)?.map((purchase) => purchase.key)).toEqual([
+      'first',
+      'second',
+    ])
+  })
+
+  it('не изменяет исходный журнал и не выдумывает время', () => {
+    const log: LaningPurchase[] = [
+      { time: 900, key: 'blink' },
+      { time: 100, key: 'magic_wand' },
+    ]
+    const before = log.map((purchase) => ({ ...purchase }))
+
+    sortPurchasesChronologically(log)
+
+    expect(log).toEqual(before)
+    expect(sortPurchasesChronologically(null)).toBeNull()
+    expect(sortPurchasesChronologically([])).toEqual([])
+  })
+})
+
+/**
+ * Подпись времени покупки на иконке (Task 15, финальная итерация).
+ *
+ * Проверяется различие между подтверждённой покупкой на нулевой секунде (`00:00`),
+ * предматчевой покупкой с отрицательным временем (`-мм:сс`) и отсутствием времени
+ * (подпись не выводится вовсе).
+ */
+describe('purchaseClockText — подпись времени покупки', () => {
+  it('показывает подтверждённое время в формате мм:сс', () => {
+    expect(purchaseClockText(0)).toBe('00:00')
+    expect(purchaseClockText(592)).toBe('09:52')
+    expect(purchaseClockText(3599)).toBe('59:59')
+  })
+
+  it('различает покупку на нулевой секунде и предматчевую покупку', () => {
+    expect(purchaseClockText(0)).toBe('00:00')
+    expect(purchaseClockText(-90)).toBe('-01:30')
+    expect(purchaseClockText(-1)).toBe('-00:01')
+    // Отрицательное время — реальное событие до крипов, а не отсутствие данных.
+    expect(purchaseClockText(-90)).not.toBe('00:00')
+  })
+
+  it('округляет дробные секунды вниз, сохраняя знак', () => {
+    expect(purchaseClockText(59.9)).toBe('00:59')
+    expect(purchaseClockText(-59.9)).toBe('-00:59')
   })
 })

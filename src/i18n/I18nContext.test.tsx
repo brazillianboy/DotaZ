@@ -2,7 +2,7 @@ import { renderToStaticMarkup } from 'react-dom/server'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import LanguageSwitcher from '../components/LanguageSwitcher'
-import MatchSummary from '../components/MatchSummary'
+import MatchHeader from '../components/MatchHeader'
 import { normalizeMatch } from '../lib/normalizeMatch'
 import {
   I18nProvider,
@@ -70,19 +70,19 @@ describe('Провайдер локализации', () => {
     })
     const ruHtml = renderToStaticMarkup(
       <I18nProvider initialLocale="ru">
-        <MatchSummary match={match} requestedId="9007760151" />
+        <MatchHeader match={match} requestedId="9007760151" />
       </I18nProvider>,
     )
     const enHtml = renderToStaticMarkup(
       <I18nProvider initialLocale="en">
-        <MatchSummary match={match} requestedId="9007760151" />
+        <MatchHeader match={match} requestedId="9007760151" />
       </I18nProvider>,
     )
 
     expect(ruHtml).toContain('Матч 9007760151')
     expect(enHtml).toContain('Match 9007760151')
-    // Факты не зависят от языка.
-    for (const fact of ['9007760151', '34:29', '2069', 'Radiant']) {
+    // Факты не зависят от языка: ID, длительность в MM:SS и победитель.
+    for (const fact of ['9007760151', '34:29', 'Radiant']) {
       expect(ruHtml, `ru:${fact}`).toContain(fact)
       expect(enHtml, `en:${fact}`).toContain(fact)
     }

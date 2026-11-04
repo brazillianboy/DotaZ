@@ -1,5 +1,10 @@
 import { buildLaningStageData, collectPurchaseLog } from './laning'
-import type { NormalizedMatch, NormalizedPlayer, PlayerTeam } from '../types/match'
+import type {
+  BuildingKillEvent,
+  NormalizedMatch,
+  NormalizedPlayer,
+  PlayerTeam,
+} from '../types/match'
 
 /**
  * Нормализация ответа OpenDota (Task 6).
@@ -95,6 +100,128 @@ function normalizeDuration(value: unknown): number | null {
   return duration
 }
 
+/** Неотрицательное целое значение (`radiant_score`, `dire_score`, маски зданий). */
+function normalizeNonNegativeInteger(value: unknown): number | null {
+  const numeric = toIntegerOrNull(value)
+  if (numeric === null || numeric < 0) {
+    return null
+  }
+  return numeric
+}
+
+/** Числовой код (`game_mode`, `region`): неотрицательное целое либо `null`. */
+function normalizeCode(value: unknown): number | null {
+  return normalizeNonNegativeInteger(value)
+}
+
+/** Время начала матча: положительное целое (unix, секунды) либо `null`. */
+function normalizeStartTime(value: unknown): number | null {
+  const numeric = toIntegerOrNull(value)
+  if (numeric === null || numeric <= 0) {
+    return null
+  }
+  return numeric
+}
+
+/**
+ * Подтверждённое имя игрока (`personaname`).
+ * Пустая строка и не-строки → `null`: ники не выдумываются.
+ */
+export function normalizePlayerName(value: unknown): string | null {
+  if (typeof value !== 'string') {
+    return null
+  }
+  const trimmed = value.trim()
+  return trimmed.length === 0 ? null : trimmed
+}
+
+/** Идентификатор аккаунта: положительное целое либо `null`. */
+export function normalizeAccountId(value: unknown): number | null {
+  const numeric = toIntegerOrNull(value)
+  if (numeric === null || numeric <= 0) {
+    return null
+  }
+  return numeric
+}
+
+/**
+ * Финальный инвентарь: ID слотов `item_0 … item_5` в исходном порядке.
+ * Если ни один слот не подтверждён числом, инвентарь считается недоступным (`null`).
+ */
+export function collectInventoryIds(raw: unknown): (number | null)[] | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const slots: (number | null)[] = []
+  let hasAny = false
+  for (let index = 0; index < 6; index += 1) {
+    const value = toIntegerOrNull(raw[`item_${index}`])
+    if (value !== null && value > 0) {
+      slots.push(value)
+      hasAny = true
+    } else {
+      slots.push(null)
+    }
+  }
+  return hasAny ? slots : null
+}
+
+/** Нейтральный предмет (`item_neutral`): положительное целое либо `null`. */
+export function collectNeutralItemId(raw: unknown): number | null {
+  if (!isRecord(raw)) {
+    return null
+  }
+  const value = toIntegerOrNull(raw.item_neutral)
+  if (value === null || value <= 0) {
+    return null
+  }
+  return value
+}
+
+/**
+ * Запись прокачки способностей (`ability_upgrades_arr`).
+ * Точный порядок сохраняется; любая некорректная запись делает список недостоверным
+ * (`null`), чтобы уровень нельзя было приписать не той способности.
+ */
+export function collectAbilityUpgrades(value: unknown): number[] | null {
+  if (!Array.isArray(value)) {
+    return null
+  }
+  const upgrades: number[] = []
+  for (const item of value) {
+    const id = toIntegerOrNull(item)
+    if (id === null || id <= 0) {
+      return null
+    }
+    upgrades.push(id)
+  }
+  return upgrades
+}
+
+/**
+ * События разрушения зданий из `objectives`: берутся только записи `building_kill`
+ * с корректным временем и ключом. Некорректная запись делает список недостоверным
+ * (`null`), потому что по нему показывается время разрушения.
+ */
+export function collectBuildingKills(value: unknown): BuildingKillEvent[] | null {
+  if (!Array.isArray(value)) {
+    return null
+  }
+  const events: BuildingKillEvent[] = []
+  for (const entry of value) {
+    if (!isRecord(entry) || entry.type !== 'building_kill') {
+      continue
+    }
+    const time = toIntegerOrNull(entry.time)
+    const key = entry.key
+    if (time === null || time < 0 || typeof key !== 'string' || key.length === 0) {
+      return null
+    }
+    events.push({ time, key })
+  }
+  return events
+}
+
 /**
  * Нормализация одного участника.
  *
@@ -120,10 +247,45 @@ function normalizePlayer(raw: unknown): NormalizedPlayer | null {
     gold_per_min: toIntegerOrNull(raw.gold_per_min),
     xp_per_min: toIntegerOrNull(raw.xp_per_min),
     last_hits: toIntegerOrNull(raw.last_hits),
+    // Дополнительные подтверждённые показатели (Task 15): отсутствие → `null`.
+    hero_damage: toIntegerOrNull(raw.hero_damage),
+    tower_damage: toIntegerOrNull(raw.tower_damage),
+    hero_healing: toIntegerOrNull(raw.hero_healing),
+    level: toIntegerOrNull(raw.level),
+    denies: toIntegerOrNull(raw.denies),
+    net_worth: toIntegerOrNull(raw.net_worth),
+    player_name: normalizePlayerName(raw.personaname),
+    account_id: normalizeAccountId(raw.account_id),
+    inventory_ids: collectInventoryIds(raw),
+    neutral_item_id: collectNeutralItemId(raw),
+    ability_upgrades: collectAbilityUpgrades(raw.ability_upgrades_arr),
     // Полный журнал покупок за матч: нужен секции собранных предметов.
     purchaseLog: collectPurchaseLog(raw.purchase_log),
     // Ранняя стадия 00:00–15:00 (Task 8): данные читаются из той же записи игрока.
     laning: buildLaningStageData(raw),
+  }
+}
+
+/**
+ * Пустая нормализованная модель матча: все поля отсутствуют (`null`), участников нет.
+ * Используется как безопасная заглушка, когда достоверных данных матча нет вовсе.
+ */
+export function createEmptyNormalizedMatch(): NormalizedMatch {
+  return {
+    match_id: null,
+    duration: null,
+    radiant_win: null,
+    radiant_score: null,
+    dire_score: null,
+    game_mode: null,
+    region: null,
+    start_time: null,
+    tower_status_radiant: null,
+    tower_status_dire: null,
+    barracks_status_radiant: null,
+    barracks_status_dire: null,
+    buildingKills: null,
+    players: [],
   }
 }
 
@@ -133,7 +295,7 @@ function normalizePlayer(raw: unknown): NormalizedPlayer | null {
  */
 export function normalizeMatch(raw: unknown): NormalizedMatch {
   if (!isRecord(raw)) {
-    return { match_id: null, duration: null, radiant_win: null, players: [] }
+    return createEmptyNormalizedMatch()
   }
 
   const players: NormalizedPlayer[] = []
@@ -150,6 +312,17 @@ export function normalizeMatch(raw: unknown): NormalizedMatch {
     match_id: normalizeMatchId(raw.match_id),
     duration: normalizeDuration(raw.duration),
     radiant_win: typeof raw.radiant_win === 'boolean' ? raw.radiant_win : null,
+    // Подтверждённые метаданные и состояние зданий (Task 15): отсутствие → `null`.
+    radiant_score: normalizeNonNegativeInteger(raw.radiant_score),
+    dire_score: normalizeNonNegativeInteger(raw.dire_score),
+    game_mode: normalizeCode(raw.game_mode),
+    region: normalizeCode(raw.region),
+    start_time: normalizeStartTime(raw.start_time),
+    tower_status_radiant: normalizeNonNegativeInteger(raw.tower_status_radiant),
+    tower_status_dire: normalizeNonNegativeInteger(raw.tower_status_dire),
+    barracks_status_radiant: normalizeNonNegativeInteger(raw.barracks_status_radiant),
+    barracks_status_dire: normalizeNonNegativeInteger(raw.barracks_status_dire),
+    buildingKills: collectBuildingKills(raw.objectives),
     players,
   }
 }

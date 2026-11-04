@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 
 import fixture from '../../samples/match-.json'
-import { normalizeMatch, normalizeMatchId, teamFromPlayerSlot } from './normalizeMatch'
+import {
+  collectAbilityUpgrades,
+  collectBuildingKills,
+  collectInventoryIds,
+  createEmptyNormalizedMatch,
+  normalizeAccountId,
+  normalizeMatch,
+  normalizeMatchId,
+  normalizePlayerName,
+  teamFromPlayerSlot,
+} from './normalizeMatch'
 
 /** Мини-конструктор участника для юнит-тестов (значения синтетические). */
 function makePlayer(overrides: Record<string, unknown> = {}): Record<string, unknown> {
@@ -44,6 +54,18 @@ describe('Test 1 — полный валидный матч', () => {
       gold_per_min: 100,
       xp_per_min: 100,
       last_hits: 10,
+      // Task 15: подтверждённые дополнительные поля (в синтетическом игроке отсутствуют).
+      hero_damage: null,
+      tower_damage: null,
+      hero_healing: null,
+      level: null,
+      denies: null,
+      net_worth: null,
+      player_name: null,
+      account_id: null,
+      inventory_ids: null,
+      neutral_item_id: null,
+      ability_upgrades: null,
       purchaseLog: null,
       laning: {
         interval: { minutes: 15, label: '00:00–15:00' },
@@ -184,6 +206,112 @@ describe('Test 7 — явные null', () => {
   })
 })
 
+describe('Test 15 — подтверждённые поля Task 15', () => {
+  it('читает инвентарь, уровень, денаи, net worth, урон и лечение', () => {
+    const match = normalizeMatch({
+      players: [
+        {
+          player_slot: 0,
+          level: 22,
+          denies: 23,
+          net_worth: 20857,
+          hero_damage: 31142,
+          tower_damage: 6003,
+          hero_healing: 0,
+          item_0: 63,
+          item_1: 147,
+          item_2: 0,
+          item_3: null,
+          item_4: 108,
+          item_5: 139,
+          item_neutral: 263,
+          personaname: 'Eris Greyrat',
+          account_id: 1095077156,
+        },
+      ],
+    })
+    const player = match.players[0]
+
+    expect(player.level).toBe(22)
+    expect(player.denies).toBe(23)
+    expect(player.net_worth).toBe(20857)
+    expect(player.hero_damage).toBe(31142)
+    expect(player.tower_damage).toBe(6003)
+    // Легитимный ноль сохраняется нулём, а не «нет данных».
+    expect(player.hero_healing).toBe(0)
+    expect(player.inventory_ids).toEqual([63, 147, null, null, 108, 139])
+    expect(player.neutral_item_id).toBe(263)
+    expect(player.player_name).toBe('Eris Greyrat')
+    expect(player.account_id).toBe(1095077156)
+  })
+
+  it('пустое имя игрока и отсутствие инвентаря → null (ники не выдумываются)', () => {
+    const match = normalizeMatch({
+      players: [{ player_slot: 0, personaname: '   ', name: 'не используется' }],
+    })
+
+    expect(match.players[0].player_name).toBeNull()
+    expect(match.players[0].inventory_ids).toBeNull()
+    expect(match.players[0].neutral_item_id).toBeNull()
+    expect(normalizePlayerName(undefined)).toBeNull()
+    expect(normalizeAccountId(0)).toBeNull()
+    expect(collectInventoryIds({ item_0: 0, item_1: 0 })).toBeNull()
+  })
+
+  it('сохраняет запись прокачки способностей в исходном порядке', () => {
+    const upgrades = [5019, 343, 5019, 5632, 6027]
+    const match = normalizeMatch({ players: [{ player_slot: 0, ability_upgrades_arr: upgrades }] })
+
+    expect(match.players[0].ability_upgrades).toEqual(upgrades)
+    expect(collectAbilityUpgrades([1, 'x'])).toBeNull()
+    expect(collectAbilityUpgrades('nope')).toBeNull()
+    expect(collectAbilityUpgrades([])).toEqual([])
+  })
+
+  it('читает метаданные матча и битмаски зданий', () => {
+    const match = normalizeMatch({
+      match_id: 9007760151,
+      radiant_score: 56,
+      dire_score: 22,
+      game_mode: 22,
+      region: 3,
+      start_time: 1789895287,
+      tower_status_radiant: 1974,
+      tower_status_dire: 0,
+      barracks_status_radiant: 63,
+      barracks_status_dire: 0,
+    })
+
+    expect(match.radiant_score).toBe(56)
+    expect(match.dire_score).toBe(22)
+    expect(match.game_mode).toBe(22)
+    expect(match.region).toBe(3)
+    expect(match.start_time).toBe(1789895287)
+    expect(match.tower_status_radiant).toBe(1974)
+    expect(match.tower_status_dire).toBe(0)
+    expect(match.barracks_status_radiant).toBe(63)
+    expect(match.barracks_status_dire).toBe(0)
+  })
+
+  it('собирает только подтверждённые события разрушения зданий', () => {
+    const match = normalizeMatch({
+      objectives: [
+        { type: 'CHAT_MESSAGE_FIRSTBLOOD', time: 95 },
+        { type: 'building_kill', time: 664, key: 'npc_dota_badguys_tower1_top' },
+        { type: 'building_kill', time: 2070, key: 'npc_dota_badguys_fort' },
+      ],
+    })
+
+    expect(match.buildingKills).toEqual([
+      { time: 664, key: 'npc_dota_badguys_tower1_top' },
+      { time: 2070, key: 'npc_dota_badguys_fort' },
+    ])
+    expect(collectBuildingKills(undefined)).toBeNull()
+    expect(collectBuildingKills([{ type: 'building_kill', time: 'x', key: 'k' }])).toBeNull()
+    expect(collectBuildingKills([])).toEqual([])
+  })
+})
+
 describe('Test 8 — отсутствующие или некорректные players', () => {
   it.each([[undefined], [null], ['не массив'], [{}], [42], [true]])(
     'players = %s → пустой массив без исключений',
@@ -193,7 +321,7 @@ describe('Test 8 — отсутствующие или некорректные 
   )
 
   it('не-объектный ответ → пустая модель', () => {
-    const empty = { match_id: null, duration: null, radiant_win: null, players: [] }
+    const empty = createEmptyNormalizedMatch()
     expect(normalizeMatch(null)).toEqual(empty)
     expect(normalizeMatch(undefined)).toEqual(empty)
     expect(normalizeMatch('строка')).toEqual(empty)

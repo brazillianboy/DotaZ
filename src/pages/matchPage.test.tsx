@@ -7,6 +7,8 @@ import { I18nProvider } from '../i18n/I18nContext'
 import { translations, type Locale } from '../i18n/translations'
 import MatchParseNotice from '../components/MatchParseNotice'
 import type { MatchParseOutcome } from '../lib/matchParseFlow'
+import { createEmptyNormalizedMatch } from '../lib/normalizeMatch'
+import type { NormalizedMatch } from '../types/match'
 import MatchPage from './MatchPage'
 
 // Исходник читается как строка (Vite ?raw) — для статической проверки отсутствия хардкода.
@@ -56,6 +58,14 @@ function renderMatchPage(locale: Locale) {
 describe('MatchPage — автоматическая обработка реплея (Task 14)', () => {
   const outcome = (value: MatchParseOutcome): MatchParseOutcome => value
 
+  /** Пустая нормализованная модель матча для проверок панели статуса (Task 15). */
+  const emptyMatch = (): NormalizedMatch => ({
+    ...createEmptyNormalizedMatch(),
+    match_id: '1',
+    duration: 1,
+    radiant_win: true,
+  })
+
   function renderNotice(locale: Locale, value: MatchParseOutcome) {
     return renderToStaticMarkup(
       <I18nProvider initialLocale={locale}>
@@ -96,7 +106,7 @@ describe('MatchPage — автоматическая обработка репл
   it('показывает статус готовности после подтверждённой обработки', () => {
     const value = outcome({
       kind: 'parsed',
-      match: { match_id: '1', duration: 1, radiant_win: true, players: [] },
+      match: emptyMatch(),
       jobId: '5',
     })
     const ru = renderNotice('ru', value)
@@ -111,7 +121,7 @@ describe('MatchPage — автоматическая обработка репл
     const value = outcome({
       kind: 'replay-unavailable',
       reason: 'expired',
-      match: { match_id: '1', duration: 1, radiant_win: true, players: [] },
+      match: emptyMatch(),
     })
     const ru = renderNotice('ru', value)
     const en = renderNotice('en', value)
@@ -122,7 +132,7 @@ describe('MatchPage — автоматическая обработка репл
   })
 
   it('сообщает о продолжающейся обработке и об ограничении частоты запросов', () => {
-    const match = { match_id: '1', duration: 1, radiant_win: true, players: [] }
+    const match = emptyMatch()
     const pendingRu = renderNotice('ru', outcome({ kind: 'pending', jobId: '5', match }))
     const pendingEn = renderNotice('en', outcome({ kind: 'pending', jobId: null, match }))
     const limitedRu = renderNotice(
@@ -142,7 +152,7 @@ describe('MatchPage — автоматическая обработка репл
   })
 
   it('не показывает панель, когда обработка не требовалась или была отменена', () => {
-    const match = { match_id: '1', duration: 1, radiant_win: true, players: [] }
+    const match = emptyMatch()
     expect(renderNotice('ru', outcome({ kind: 'not-needed', match }))).toBe('')
     expect(renderNotice('en', outcome({ kind: 'aborted' }))).toBe('')
   })
@@ -163,6 +173,14 @@ describe('MatchPage — локализация ссылок навигации',
     expect(matchPageSource).toContain("t('persistence.guest.loginLink')")
     expect(matchPageSource).not.toContain('Вернуться на главную')
     expect(matchPageSource).not.toContain('Войти в аккаунт')
+  })
+
+  it('не выводит отдельную секцию предметов за матч (Task 15)', () => {
+    // Секция «Предметы за матч» удалена: предметы показываются в таблицах команд,
+    // а колонка предметов и общие утилиты фильтрации сохранены.
+    expect(matchPageSource).not.toContain('MatchItems')
+    expect(matchPageSource).not.toContain("t('items.title')")
+    expect(matchPageSource).toContain('TeamOverview')
   })
 
   it('сохраняет существующий маршрут «на главную» (/)', () => {

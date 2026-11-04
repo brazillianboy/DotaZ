@@ -1,14 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
+import AbilityBuild from '../components/AbilityBuild'
 import AnalysisReport from '../components/AnalysisReport'
-import MatchSummary from '../components/MatchSummary'
+import BuildingsMap from '../components/BuildingsMap'
 import LaneReport from '../components/LaneReport'
-import MatchItems from '../components/MatchItems'
+import MatchHeader from '../components/MatchHeader'
 import MatchParseNotice from '../components/MatchParseNotice'
-import PlayerSelector from '../components/PlayerSelector'
 import PlayerStats from '../components/PlayerStats'
 import ReportPersistenceNotice from '../components/ReportPersistenceNotice'
+import TeamOverview from '../components/TeamOverview'
 import { useAuth } from '../hooks/useAuth'
 import {
   loadOrCreatePersonalReport,
@@ -22,6 +23,8 @@ import {
   type MatchParseOutcome,
   type MatchParsePhase,
 } from '../lib/matchParseFlow'
+import { loadVisualizationMetadata } from '../lib/matchEnrichment'
+import type { NormalizedMatch } from '../types/match'
 import { createBrowserParseAttemptStore } from '../lib/replayParsing'
 import { fetchParseJobStatus, requestReplayParse, resolveOpenDotaApiKey } from '../lib/opendotaParse'
 import {
@@ -96,6 +99,15 @@ export default function MatchPage() {
    * в `useMemo`, а обновлять состояние React можно только из актуального эффекта.
    */
   const parsePhaseHandler = useRef<((phase: MatchParsePhase) => void) | null>(null)
+  /**
+   * Отображаемый матч, дополненный недостающими метаданными визуализаций (Task 15).
+   * Сохранённый отчёт при этом не изменяется: дополнение живёт только в состоянии
+   * страницы и не записывается в Supabase.
+   */
+  const [enrichedMatch, setEnrichedMatch] = useState<NormalizedMatch | null>(null)
+  const [enrichmentState, setEnrichmentState] = useState<'idle' | 'loading' | 'enriched' | 'unavailable'>(
+    'idle',
+  )
 
   /** Достоверное состояние сессии: пока сессия восстанавливается, работать нельзя. */
   const authStatus = authLoading ? 'loading' : user !== null ? 'authenticated' : 'anonymous'
@@ -224,6 +236,56 @@ export default function MatchPage() {
     }
   }, [matchId, attempt, authStatus, flowDeps])
 
+  /**
+   * Дополнение визуализаций для старых снимков (Task 15).
+   *
+   * Выполняется ровно один read-only запрос матча и только если в снимке нет метаданных
+   * для Ability Build / карты зданий / инвентаря. Сохранённый отчёт не изменяется,
+   * обработка реплея не запрашивается, запись в Supabase не выполняется: результат
+   * живёт только в состоянии страницы. Повторные запросы к тому же матчу исключены
+   * кэшем модуля, отмена выполняется через AbortController.
+   */
+  const reportMatch = state.status === 'report' ? state.view.match : null
+  const reportMatchId = state.status === 'report' ? state.view.matchId : null
+
+  useEffect(() => {
+    if (reportMatch === null || reportMatchId === null) {
+      setEnrichedMatch(null)
+      setEnrichmentState('idle')
+      return
+    }
+    const controller = new AbortController()
+    let active = true
+    setEnrichmentState('loading')
+    loadVisualizationMetadata({
+      matchId: reportMatchId,
+      match: reportMatch,
+      fetchMatch: fetchMatchById,
+      signal: controller.signal,
+    })
+      .then((outcome) => {
+        if (!active) {
+          return
+        }
+        if (outcome.kind === 'enriched') {
+          setEnrichedMatch(outcome.match)
+          setEnrichmentState('enriched')
+          return
+        }
+        setEnrichedMatch(null)
+        setEnrichmentState(outcome.kind === 'unavailable' ? 'unavailable' : 'idle')
+      })
+      .catch(() => {
+        if (active) {
+          setEnrichmentState('unavailable')
+        }
+      })
+    return () => {
+      active = false
+      controller.abort()
+    }
+  }, [reportMatch, reportMatchId])
+
   const retry = useCallback(() => {
     setAttempt((value) => value + 1)
   }, [])
@@ -245,7 +307,9 @@ export default function MatchPage() {
   }, [flowDeps, state])
 
   const selectedPlayer =
-    state.status === 'report' ? findPlayerBySlot(state.view.match.players, selectedSlot) : null
+    state.status === 'report'
+      ? findPlayerBySlot((enrichedMatch ?? state.view.match).players, selectedSlot)
+      : null
 
   // Сохранённые наблюдения из снимка отчёта: правила заново не пересчитываются.
   const selectedAnalysis =
@@ -255,8 +319,49 @@ export default function MatchPage() {
     <section className="stub" aria-busy={state.status === 'loading'}>
       <div className="container">
         {state.status === 'report' ? (
-          <div className="match-details">
-            <MatchSummary match={state.view.match} requestedId={state.view.matchId} />
+          <div className="match-dashboard">
+            <MatchHeader match={enrichedMatch ?? state.view.match} requestedId={state.view.matchId}>
+              <MatchParseNotice outcome={parseOutcome} />
+            </MatchHeader>
+
+            {enrichmentState === 'unavailable' && (
+              <p className="stub__hint" role="status">
+                {t('enrich.unavailable')}
+              </p>
+            )}
+            {enrichmentState === 'enriched' && (
+              <p className="stub__hint" role="status">
+                {t('enrich.loaded')}
+              </p>
+            )}
+
+            <TeamOverview
+              players={(enrichedMatch ?? state.view.match).players}
+              selectedSlot={selectedSlot}
+              onSelect={setSelectedSlot}
+            />
+
+            <BuildingsMap match={enrichedMatch ?? state.view.match} />
+
+            <AbilityBuild
+              players={(enrichedMatch ?? state.view.match).players}
+              selectedSlot={selectedSlot}
+              onSelect={setSelectedSlot}
+            />
+
+            <section className="player-analysis" aria-labelledby="player-analysis-title">
+              <h2 className="match-section__title" id="player-analysis-title">
+                {t('match.analysisTitle')}
+              </h2>
+              <PlayerStats player={selectedPlayer} />
+              <LaneReport player={selectedPlayer} />
+              <AnalysisReport
+                match={enrichedMatch ?? state.view.match}
+                player={selectedPlayer}
+                analysis={selectedAnalysis}
+              />
+            </section>
+
             <ReportPersistenceNotice
               view={state.view}
               save={state.save}
@@ -268,24 +373,7 @@ export default function MatchPage() {
               onRetrySave={handleRetrySave}
               retrying={retrying}
             />
-            <MatchParseNotice outcome={parseOutcome} />
-            <div className="match-details__columns">
-              <PlayerSelector
-                players={state.view.match.players}
-                selectedSlot={selectedSlot}
-                onSelect={setSelectedSlot}
-              />
-              <div className="match-details__stack">
-                <PlayerStats player={selectedPlayer} />
-                <LaneReport player={selectedPlayer} />
-              </div>
-            </div>
-            <MatchItems player={selectedPlayer} />
-            <AnalysisReport
-              match={state.view.match}
-              player={selectedPlayer}
-              analysis={selectedAnalysis}
-            />
+
             <Link className="btn btn--ghost" to="/">
               {t('common.backHome')}
             </Link>

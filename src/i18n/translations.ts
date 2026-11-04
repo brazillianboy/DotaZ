@@ -199,6 +199,7 @@ export const ru = {
   'match.playersInResponse': 'Участников в ответе',
   'match.source': 'Источник данных',
   'match.loadingBadge': 'Загрузка',
+  'match.analysisTitle': 'Анализ выбранного игрока',
   'match.phase.checkingReport': 'Проверяем сохранённый отчёт…',
   'match.phase.fetching': 'Запрашиваем данные матча у OpenDota…',
   'match.phase.analyzing': 'Формируем наблюдения по всем участникам…',
@@ -356,6 +357,128 @@ export const ru = {
     'Реплей обработан, но подробные данные всё ещё неполные. Показана доступная статистика.',
   'parse.hint':
     'Запрос обработки отправляется автоматически — отдельная кнопка не нужна. Повторные запросы ограничены, чтобы не расходовать лимиты OpenDota.',
+
+  // --- Шапка матча (Task 15) ---
+  'matchHeader.winnerRadiant': 'Победа Radiant',
+  'matchHeader.winnerDire': 'Победа Dire',
+  'matchHeader.winnerUnknown': 'Победитель не подтверждён',
+  'matchHeader.score': 'Счёт',
+  'matchHeader.scoreUnavailable': 'Счёт недоступен: данных участников недостаточно.',
+  'matchHeader.scoreProvider': 'Счёт из подтверждённых полей OpenDota.',
+  'matchHeader.scorePlayers': 'Счёт рассчитан по подтверждённым убийствам всех десяти участников.',
+  'matchHeader.duration': 'Длительность',
+  'matchHeader.matchId': 'ID матча',
+  'matchHeader.gameMode': 'Режим игры',
+  'matchHeader.region': 'Регион',
+  'matchHeader.started': 'Начало матча',
+  'matchHeader.ageDays': '{days} дн. назад',
+  'matchHeader.source': 'Источник',
+  'matchHeader.sourceValue': 'OpenDota',
+  'matchHeader.radiantShort': 'Radiant',
+  'matchHeader.direShort': 'Dire',
+
+  // --- Обзор команд (Task 15) ---
+  'team.radiantTitle': 'Radiant',
+  'team.direTitle': 'Dire',
+  'team.tableLabel': 'Обзор команды {team}',
+  'team.columnHero': 'Герой',
+  'team.columnPlayer': 'Игрок',
+  'team.columnLevel': 'Ур.',
+  'team.columnKda': 'У / С / П',
+  'team.columnLastHits': 'Добивания',
+  'team.columnDenies': 'Денаи',
+  'team.columnNetWorth': 'Чистая стоимость',
+  'team.columnGpm': 'ЗПМ',
+  'team.columnXpm': 'ОПМ',
+  'team.columnHeroDamage': 'Урон героям',
+  'team.columnTowerDamage': 'Урон зданиям',
+  'team.columnHealing': 'Лечение',
+  'team.columnItems': 'Предметы',
+  'team.unknownPlayer': 'Неизвестный игрок',
+  'team.heroUnknown': 'герой #{id}',
+  'team.unknownHeroImage': 'Изображение героя недоступно',
+  'team.heroImageAlt': 'Портрет героя: {hero}',
+  'team.itemsUnavailable': 'Инвентарь недоступен',
+  'team.itemAlt': 'Предмет: {item}',
+  'team.noPlayers': 'Нет подтверждённых участников этой команды.',
+  'team.selectHint': 'Выберите строку, чтобы открыть подробный анализ участника.',
+  'team.selectedMark': 'Выбран',
+  'team.hint':
+    'Данные — из ответа OpenDota; «{dash}» означает отсутствие поля. ЗПМ и ОПМ — показатели в минуту, а не суммарные золото и опыт.',
+
+  // --- Прокачка способностей (Task 15) ---
+  'abilities.title': 'Прокачка способностей',
+  'abilities.lead':
+    'Порядок изучения способностей и талантов по уровням героя (запись OpenDota).',
+  'abilities.teamTitle': 'Прокачка: {team}',
+  'abilities.level': 'Уровень {level}',
+  'abilities.talent': 'Талант',
+  'abilities.ability': 'Способность',
+  'abilities.talentMark': 'Т',
+  'abilities.unknownAbility': 'Неизвестная способность #{id}',
+  'abilities.unknownName': 'Название недоступно',
+  'abilities.unavailable': 'Запись прокачки способностей отсутствует в ответе OpenDota.',
+  'abilities.catalogUnavailable':
+    'Справочник способностей недоступен: показаны только ID без названий и иконок.',
+  'abilities.loading': 'Загружаем справочник способностей…',
+  'abilities.empty': 'Способности не зафиксированы.',
+  'abilities.orderLabel': 'Порядок {order}',
+  'abilities.heroImageAlt': 'Портрет героя: {hero}',
+  'abilities.abilityImageAlt': 'Иконка способности: {ability}',
+  'abilities.selectHint': 'Нажмите на строку игрока, чтобы открыть его анализ.',
+  'abilities.hint':
+    'Порядок и уровни берутся из записи OpenDota без домысливания: пропущенные уровни не восстанавливаются, таланты помечены отдельно.',
+
+  // --- Карта зданий (Task 15) ---
+  'buildings.title': 'Карта зданий',
+  'buildings.lead': 'Состояние башен, бараков и трона на конец матча.',
+  'buildings.teamTitle': 'Здания: {team}',
+  'buildings.standing': 'Стоит',
+  'buildings.destroyed': 'Разрушено',
+  'buildings.unknown': 'Неизвестно',
+  'buildings.towerTier': 'Башня T{tier}',
+  'buildings.barracksMelee': 'Бараки (ближний бой)',
+  'buildings.barracksRanged': 'Бараки (дальний бой)',
+  'buildings.ancient': 'Трон',
+  'buildings.laneTop': 'верх',
+  'buildings.laneMid': 'центр',
+  'buildings.laneBot': 'низ',
+  'buildings.destroyedAt': 'разрушено на {time}',
+  'buildings.noTime': 'время разрушения не подтверждено',
+  'buildings.tower4Note':
+    'Две башни T4 приходят под одним ключом события: позиция конкретной башни не определяется, время не приписывается.',
+  'buildings.unavailable': 'Данные о состоянии зданий отсутствуют в ответе OpenDota.',
+  'buildings.mapLabel': 'Схема карты с состоянием зданий',
+  'buildings.summaryTitle': 'Текстовое описание',
+  'buildings.legend': 'Состояние: стоит, разрушено, неизвестно.',
+  'buildings.schematicNote':
+    'Координаты строений взяты из данных карты Dota 2 (дамп сущностей карты, патчи 7.22/7.23) и переводятся в пиксели изображения калиброванным преобразованием по опорным точкам (src/lib/buildings.ts). Изображение владельца показывается целиком, без растяжения и обрезки.',
+  'buildings.hint':
+    'Состояние — на конец матча по битмаскам OpenDota; время разрушения показывается только при подтверждённом событии.',
+  'buildings.counters': 'Стоит: {standing} · разрушено: {destroyed} · неизвестно: {unknown}',
+  'buildings.legendTitle': 'Легенда',
+  'buildings.shapeLegend': 'Форма: башня — с зубцами, бараки — с крышей, трон — ромб.',
+  'buildings.summaryTableLabel': 'Состояние зданий: {team}',
+  'buildings.laneColumn': 'Линия',
+  'buildings.barracksColumn': 'Бараки',
+  'buildings.baseRow': 'База',
+  'buildings.mapImageAlt': 'Карта Dota 2 с расположением зданий',
+  'buildings.mapImageMissing':
+    'Файл карты public/images/dotaz-map-clean.png не найден: маркеры показаны на нейтральном фоне. Восстановите изображение по указанному пути — карта появится автоматически.',
+  'buildings.mapSummaryTitle': 'Сводка по зданиям',
+  'buildings.mapNote':
+    'Маркеры стоят на местах строений: башня — с зубцами, бараки — с крышей, трон — ромб. Состояние — на конец матча по подтверждённым полям OpenDota; подробная разбивка по линиям и ярусам — ниже.',
+  'buildings.legendTeams': 'Radiant — зелёные маркеры, Dire — красные.',
+
+  // --- Общие (Task 15) ---
+  'common.technicalDetails': 'Технические подробности',
+  'enrich.loaded':
+    'Метаданные визуализаций дополнены разовым чтением матча у OpenDota; сохранённый отчёт не изменялся.',
+  'enrich.unavailable':
+    'Данные для карты зданий и прокачки недоступны: OpenDota не вернула их для этого матча.',
+  'abilities.talentsSummary': 'Таланты: {count}',
+  'laning.hintShort':
+    'Источник: OpenDota · период: {interval}. Поминутные значения берутся из массивов OpenDota и не подменяются статистикой за весь матч.',
   'persistence.rulesMismatch':
     'Отчёт сохранён с версией правил анализа {stored}; текущая версия правил — {current}. Показаны сохранённые наблюдения без пересчёта.',
 

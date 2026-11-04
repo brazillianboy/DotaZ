@@ -25,6 +25,14 @@ export interface LaningPurchase {
   key: string
 }
 
+/** Событие разрушения здания из `objectives` OpenDota (проверенное подмножество, Task 15). */
+export interface BuildingKillEvent {
+  /** Время события в секундах от начала матча. */
+  time: number
+  /** Ключ здания, например `npc_dota_badguys_tower1_top` или `npc_dota_goodguys_fort`. */
+  key: string
+}
+
 /**
  * Интервал ранней стадии, к которому относятся метрики.
  *
@@ -91,6 +99,40 @@ export interface NormalizedPlayer {
   xp_per_min: number | null
   last_hits: number | null
 
+  /** Урон по героям (`hero_damage`) за матч. */
+  hero_damage: number | null
+  /** Урон по зданиям (`tower_damage`) за матч. */
+  tower_damage: number | null
+  /** Лечение союзников (`hero_healing`) за матч. */
+  hero_healing: number | null
+  /** Уровень героя на конец матча (`level`). */
+  level: number | null
+  /** Добивания своих крипов (`denies`). */
+  denies: number | null
+  /** Чистая стоимость (`net_worth`) на конец матча. */
+  net_worth: number | null
+  /**
+   * Подтверждённое имя игрока (`personaname`). Пустая строка из ответа трактуется
+   * как отсутствие данных (`null`); ники не выдумываются.
+   */
+  player_name: string | null
+  /** Идентификатор аккаунта (`account_id`), если подтверждён. */
+  account_id: number | null
+  /**
+   * Финальный инвентарь: ID предметов слотов `item_0 … item_5` в исходном порядке.
+   * `null` — инвентарь отсутствует в ответе; `null` внутри массива — пустой слот.
+   * Время получения предметов здесь не определяется (для этого есть журнал покупок).
+   */
+  inventory_ids: (number | null)[] | null
+  /** Нейтральный предмет (`item_neutral`), если подтверждён. */
+  neutral_item_id: number | null
+  /**
+   * Запись прокачки способностей (`ability_upgrades_arr`): ID способностей и талантов
+   * в порядке изучения, где индекс `i` соответствует уровню героя `i + 1`.
+   * `null` — данных нет.
+   */
+  ability_upgrades: number[] | null
+
   /**
    * Полный журнал покупок за матч из `purchase_log` (включая предматчевые и
    * поздние записи). `null` — журнал отсутствует или недостоверен.
@@ -113,6 +155,29 @@ export interface NormalizedMatch {
   duration: number | null
   /** Победила ли сторона Radiant; `null`, если значение недоступно. */
   radiant_win: boolean | null
+  /** Подтверждённый счёт убийств Radiant (`radiant_score`) или `null`. */
+  radiant_score: number | null
+  /** Подтверждённый счёт убийств Dire (`dire_score`) или `null`. */
+  dire_score: number | null
+  /** Числовой режим игры OpenDota (`game_mode`) или `null`. */
+  game_mode: number | null
+  /** Числовой регион OpenDota (`region`) или `null`. */
+  region: number | null
+  /** Время начала матча (unix, секунды) или `null`. */
+  start_time: number | null
+  /** Битмаска башен Radiant (`tower_status_radiant`): установленный бит — башня стоит. */
+  tower_status_radiant: number | null
+  /** Битмаска башен Dire (`tower_status_dire`). */
+  tower_status_dire: number | null
+  /** Битмаска бараков Radiant (`barracks_status_radiant`). */
+  barracks_status_radiant: number | null
+  /** Битмаска бараков Dire (`barracks_status_dire`). */
+  barracks_status_dire: number | null
+  /**
+   * Подтверждённые события разрушения зданий из `objectives` (только `building_kill`
+   * с корректным временем и ключом). `null` — список отсутствует или недостоверен.
+   */
+  buildingKills: BuildingKillEvent[] | null
   /** Только фактически присутствующие и идентифицируемые участники (может быть меньше десяти). */
   players: NormalizedPlayer[]
 }

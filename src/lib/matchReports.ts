@@ -7,6 +7,7 @@ import type {
   PlayerAnalysis,
 } from '../types/analysis'
 import type {
+  BuildingKillEvent,
   LaningInterval,
   LaningPurchase,
   LaningStageData,
@@ -14,6 +15,7 @@ import type {
   NormalizedPlayer,
 } from '../types/match'
 import { buildLaningInterval, LANING_INTERVAL_MINUTES } from './laning'
+import { createEmptyNormalizedMatch } from './normalizeMatch'
 import { inspectDetailedData } from './replayParsing'
 
 /**
@@ -126,6 +128,9 @@ function clonePurchaseLog(log: LaningPurchase[] | null): LaningPurchase[] | null
 function clonePlayer(player: NormalizedPlayer): NormalizedPlayer {
   return {
     ...player,
+    // Массивы копируются, чтобы снимок не разделял ссылки с исходными данными.
+    inventory_ids: player.inventory_ids === null ? null : [...player.inventory_ids],
+    ability_upgrades: player.ability_upgrades === null ? null : [...player.ability_upgrades],
     purchaseLog: clonePurchaseLog(player.purchaseLog),
     laning: cloneLaning(player.laning),
   }
@@ -181,6 +186,21 @@ export function buildMatchSnapshot(match: NormalizedMatch, requestedId: string):
       match_id: match.match_id,
       duration: match.duration,
       radiant_win: match.radiant_win,
+      // Task 15: метаданные шапки и состояние зданий сохраняются аддитивно,
+      // старые снимки читаются без этих полей (см. парсер).
+      radiant_score: match.radiant_score,
+      dire_score: match.dire_score,
+      game_mode: match.game_mode,
+      region: match.region,
+      start_time: match.start_time,
+      tower_status_radiant: match.tower_status_radiant,
+      tower_status_dire: match.tower_status_dire,
+      barracks_status_radiant: match.barracks_status_radiant,
+      barracks_status_dire: match.barracks_status_dire,
+      buildingKills:
+        match.buildingKills === null
+          ? null
+          : match.buildingKills.map((event) => ({ time: event.time, key: event.key })),
       players: match.players.map(clonePlayer),
     },
     limitations,
@@ -735,6 +755,84 @@ function parseLaningStageData(value: unknown): Parse<LaningStageData> {
   }
 }
 
+/** Необязательное целое поле снимка: отсутствие → `null` (совместимость с версиями 1–2). */
+function parseOptionalNullableInteger(value: unknown): Parse<number | null> {
+  return value === undefined ? { ok: true, value: null } : parseNullableInteger(value)
+}
+
+/** Необязательная строка снимка: отсутствие → `null`. */
+function parseOptionalNullableString(value: unknown): Parse<string | null> {
+  return value === undefined ? { ok: true, value: null } : parseNullableString(value)
+}
+
+/**
+ * Необязательный финальный инвентарь снимка (Task 15).
+ * Отсутствие поля → `null`; `null` внутри массива — пустой слот.
+ */
+function parseOptionalInventoryIds(value: unknown): Parse<(number | null)[] | null> {
+  if (value === undefined || value === null) {
+    return { ok: true, value: null }
+  }
+  if (!Array.isArray(value)) {
+    return { ok: false }
+  }
+  const slots: (number | null)[] = []
+  for (const item of value) {
+    if (item === null) {
+      slots.push(null)
+      continue
+    }
+    const id = parseNullableInteger(item)
+    if (!id.ok || id.value === null || id.value <= 0) {
+      return { ok: false }
+    }
+    slots.push(id.value)
+  }
+  return { ok: true, value: slots }
+}
+
+/** Необязательный список ID (прокачка способностей): отсутствие → `null`. */
+function parseOptionalPositiveIntegerArray(value: unknown): Parse<number[] | null> {
+  if (value === undefined || value === null) {
+    return { ok: true, value: null }
+  }
+  if (!Array.isArray(value)) {
+    return { ok: false }
+  }
+  const ids: number[] = []
+  for (const item of value) {
+    const id = parseNullableInteger(item)
+    if (!id.ok || id.value === null || id.value <= 0) {
+      return { ok: false }
+    }
+    ids.push(id.value)
+  }
+  return { ok: true, value: ids }
+}
+
+/** Необязательный список событий разрушения зданий: отсутствие → `null`. */
+function parseOptionalBuildingKills(value: unknown): Parse<BuildingKillEvent[] | null> {
+  if (value === undefined || value === null) {
+    return { ok: true, value: null }
+  }
+  if (!Array.isArray(value)) {
+    return { ok: false }
+  }
+  const events: BuildingKillEvent[] = []
+  for (const item of value) {
+    if (!isRecord(item)) {
+      return { ok: false }
+    }
+    const time = parseNullableInteger(item.time)
+    const key = parseNonEmptyString(item.key)
+    if (!time.ok || time.value === null || time.value < 0 || !key.ok) {
+      return { ok: false }
+    }
+    events.push({ time: time.value, key: key.value })
+  }
+  return { ok: true, value: events }
+}
+
 function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
   if (!isRecord(value)) {
     return { ok: false }
@@ -748,6 +846,18 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
   const goldPerMin = parseNullableInteger(value.gold_per_min)
   const xpPerMin = parseNullableInteger(value.xp_per_min)
   const lastHits = parseNullableInteger(value.last_hits)
+  // Task 15: необязательные поля (в снимках версий 1–2 их нет → `null`).
+  const heroDamage = parseOptionalNullableInteger(value.hero_damage)
+  const towerDamage = parseOptionalNullableInteger(value.tower_damage)
+  const heroHealing = parseOptionalNullableInteger(value.hero_healing)
+  const level = parseOptionalNullableInteger(value.level)
+  const denies = parseOptionalNullableInteger(value.denies)
+  const netWorth = parseOptionalNullableInteger(value.net_worth)
+  const playerName = parseOptionalNullableString(value.player_name)
+  const accountId = parseOptionalNullableInteger(value.account_id)
+  const inventoryIds = parseOptionalInventoryIds(value.inventory_ids)
+  const neutralItemId = parseOptionalNullableInteger(value.neutral_item_id)
+  const abilityUpgrades = parseOptionalPositiveIntegerArray(value.ability_upgrades)
   const purchaseLog = parseOptionalPurchases(value.purchaseLog)
   const laning = parseLaningStageData(value.laning)
   if (
@@ -761,6 +871,17 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
     !goldPerMin.ok ||
     !xpPerMin.ok ||
     !lastHits.ok ||
+    !heroDamage.ok ||
+    !towerDamage.ok ||
+    !heroHealing.ok ||
+    !level.ok ||
+    !denies.ok ||
+    !netWorth.ok ||
+    !playerName.ok ||
+    !accountId.ok ||
+    !inventoryIds.ok ||
+    !neutralItemId.ok ||
+    !abilityUpgrades.ok ||
     !purchaseLog.ok ||
     !laning.ok
   ) {
@@ -778,6 +899,17 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
       gold_per_min: goldPerMin.value,
       xp_per_min: xpPerMin.value,
       last_hits: lastHits.value,
+      hero_damage: heroDamage.value,
+      tower_damage: towerDamage.value,
+      hero_healing: heroHealing.value,
+      level: level.value,
+      denies: denies.value,
+      net_worth: netWorth.value,
+      player_name: playerName.value,
+      account_id: accountId.value,
+      inventory_ids: inventoryIds.value,
+      neutral_item_id: neutralItemId.value,
+      ability_upgrades: abilityUpgrades.value,
       purchaseLog: purchaseLog.value,
       laning: laning.value,
     },
@@ -813,12 +945,47 @@ function parseNormalizedMatch(value: unknown): Parse<NormalizedMatch> {
     }
     parsedPlayers.push(player.value)
   }
+  // Task 15: метаданные шапки и состояние зданий; в старых снимках их нет → `null`.
+  const radiantScore = parseOptionalNullableInteger(value.radiant_score)
+  const direScore = parseOptionalNullableInteger(value.dire_score)
+  const gameMode = parseOptionalNullableInteger(value.game_mode)
+  const region = parseOptionalNullableInteger(value.region)
+  const startTime = parseOptionalNullableInteger(value.start_time)
+  const towerStatusRadiant = parseOptionalNullableInteger(value.tower_status_radiant)
+  const towerStatusDire = parseOptionalNullableInteger(value.tower_status_dire)
+  const barracksStatusRadiant = parseOptionalNullableInteger(value.barracks_status_radiant)
+  const barracksStatusDire = parseOptionalNullableInteger(value.barracks_status_dire)
+  const buildingKills = parseOptionalBuildingKills(value.buildingKills)
+  if (
+    !radiantScore.ok ||
+    !direScore.ok ||
+    !gameMode.ok ||
+    !region.ok ||
+    !startTime.ok ||
+    !towerStatusRadiant.ok ||
+    !towerStatusDire.ok ||
+    !barracksStatusRadiant.ok ||
+    !barracksStatusDire.ok ||
+    !buildingKills.ok
+  ) {
+    return { ok: false }
+  }
   return {
     ok: true,
     value: {
       match_id: matchId.value,
       duration: duration.value,
       radiant_win: radiantWin as boolean | null,
+      radiant_score: radiantScore.value,
+      dire_score: direScore.value,
+      game_mode: gameMode.value,
+      region: region.value,
+      start_time: startTime.value,
+      tower_status_radiant: towerStatusRadiant.value,
+      tower_status_dire: towerStatusDire.value,
+      barracks_status_radiant: barracksStatusRadiant.value,
+      barracks_status_dire: barracksStatusDire.value,
+      buildingKills: buildingKills.value,
       players: parsedPlayers,
     },
   }
@@ -1007,7 +1174,7 @@ export function parseStoredMatchReport(row: unknown): StoredReportParseResult {
       updatedAt: updatedAt.value,
       match:
         matchSnapshot === null
-          ? { match_id: matchId.value, duration: null, radiant_win: null, players: [] }
+          ? { ...createEmptyNormalizedMatch(), match_id: matchId.value }
           : matchSnapshot.value.match,
       analyses: analysisSnapshot === null ? [] : analysisSnapshot.value.players,
       limitations,
