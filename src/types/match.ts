@@ -126,6 +126,19 @@ export interface NormalizedPlayer {
   inventory_ids: (number | null)[] | null
   /** Нейтральный предмет (`item_neutral`), если подтверждён. */
   neutral_item_id: number | null
+
+  /**
+   * Класс линии по OpenDota (`lane`): абсолютная нумерация линии. `null` — данных нет.
+   * Используется только как факт матча; роли/позиции из этого не выводятся.
+   */
+  lane: number | null
+
+  /**
+   * Класс линии по OpenDota (`lane_role`): 1 — safe, 2 — mid, 3 — off, 4 — jungle.
+   * Это НЕ позиция 1–5: две поддержки в одной линии неразличимы.
+   * `null` — данных нет, сравнение с нормативами недоступно (Task 16).
+   */
+  lane_role: number | null
   /**
    * Запись прокачки способностей (`ability_upgrades_arr`): ID способностей и талантов
    * в порядке изучения, где индекс `i` соответствует уровню героя `i + 1`.
@@ -161,6 +174,11 @@ export interface NormalizedMatch {
   dire_score: number | null
   /** Числовой режим игры OpenDota (`game_mode`) или `null`. */
   game_mode: number | null
+  /**
+   * Числовой id патча OpenDota (`patch`, например 60 = «7.41») или `null`.
+   * Нужен для сопоставления с нормативами строго в пределах одного патча (Task 16).
+   */
+  patch: number | null
   /** Числовой регион OpenDota (`region`) или `null`. */
   region: number | null
   /** Время начала матча (unix, секунды) или `null`. */

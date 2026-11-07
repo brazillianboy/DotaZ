@@ -21,3 +21,9 @@ node_modules/
 dist/
 dist-ssr/
 .vite/
+
+# Task 16: сгенерированный датасет нормативов (public/benchmarks/*.json).
+# Права на распространение данных OpenDota/Valve не подтверждены, поэтому файл
+# не публикуется в репозитории. Код, генератор, тесты и документация — не игнорируются.
+# Как включить датасет: см. public/benchmarks/README.md.
+/public/benchmarks/*.json

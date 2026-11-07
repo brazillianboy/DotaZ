@@ -5,6 +5,7 @@ import AbilityBuild from '../components/AbilityBuild'
 import AnalysisReport from '../components/AnalysisReport'
 import BuildingsMap from '../components/BuildingsMap'
 import LaneReport from '../components/LaneReport'
+import LaningBenchmarks from '../components/LaningBenchmarks'
 import MatchHeader from '../components/MatchHeader'
 import MatchParseNotice from '../components/MatchParseNotice'
 import PlayerStats from '../components/PlayerStats'
@@ -33,6 +34,8 @@ import {
   type MatchReportView,
 } from '../lib/matchReports'
 import { createSupabaseMatchReportsClient } from '../lib/matchReportsSupabase'
+import type { BenchmarkSnapshot } from '../lib/benchmarks'
+import { loadBenchmarkSnapshot } from '../lib/benchmarkSnapshot'
 import { findPlayerBySlot, pickDefaultPlayerSlot } from '../lib/matchView'
 import { fetchMatchById, isRetryableError, validateMatchId, type OpenDotaError } from '../lib/opendota'
 import { getSupabase } from '../lib/supabase'
@@ -105,6 +108,10 @@ export default function MatchPage() {
    * страницы и не записывается в Supabase.
    */
   const [enrichedMatch, setEnrichedMatch] = useState<NormalizedMatch | null>(null)
+  /** Нормативы 15-й минуты (Task 16): `undefined` — ещё грузятся, `null` — недоступны. */
+  const [benchmarkSnapshot, setBenchmarkSnapshot] = useState<BenchmarkSnapshot | null | undefined>(
+    undefined,
+  )
   const [enrichmentState, setEnrichmentState] = useState<'idle' | 'loading' | 'enriched' | 'unavailable'>(
     'idle',
   )
@@ -306,6 +313,18 @@ export default function MatchPage() {
       })
   }, [flowDeps, state])
 
+  useEffect(() => {
+    let active = true
+    void loadBenchmarkSnapshot().then((snapshot) => {
+      if (active) {
+        setBenchmarkSnapshot(snapshot)
+      }
+    })
+    return () => {
+      active = false
+    }
+  }, [])
+
   const selectedPlayer =
     state.status === 'report'
       ? findPlayerBySlot((enrichedMatch ?? state.view.match).players, selectedSlot)
@@ -355,6 +374,13 @@ export default function MatchPage() {
               </h2>
               <PlayerStats player={selectedPlayer} />
               <LaneReport player={selectedPlayer} />
+        {benchmarkSnapshot !== undefined && (
+          <LaningBenchmarks
+            player={selectedPlayer}
+            patch={(enrichedMatch ?? state.view.match).patch}
+            snapshot={benchmarkSnapshot}
+          />
+        )}
               <AnalysisReport
                 match={enrichedMatch ?? state.view.match}
                 player={selectedPlayer}

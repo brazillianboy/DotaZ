@@ -39,6 +39,8 @@ function makePlayer(overrides: Partial<Omit<NormalizedPlayer, 'laning' | 'purcha
     account_id: null,
     inventory_ids: null,
     neutral_item_id: null,
+    lane: null,
+    lane_role: null,
     ability_upgrades: null,
     purchaseLog: null,
     laning: buildLaningStageData({}),

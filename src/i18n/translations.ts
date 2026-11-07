@@ -577,6 +577,44 @@ export const ru = {
     'Снимок данных матча отсутствует: запись отчёта не завершена (payload не записан).',
   'limitation.report.analysis_payload.missing':
     'Снимок анализа отсутствует: запись отчёта не завершена (payload не записан).',
+
+  // --- Task 16: нормативы первых 15 минут ---
+  'bench.title': 'Нормативы за первые 15 минут ({interval})',
+  'bench.metric.lastHits': 'LH к 15:00',
+  'bench.metric.gold': 'Золото к 15:00',
+  'bench.metric.xp': 'Опыт к 15:00',
+  'bench.column.metric': 'Показатель',
+  'bench.column.actual': 'Факт',
+  'bench.column.median': 'Медиана',
+  'bench.column.range': 'p25–p75',
+  'bench.column.diff': 'Разница',
+  'bench.column.sample': 'Выборка',
+  'bench.role.safe': 'лёгкая линия',
+  'bench.role.mid': 'центральная линия',
+  'bench.role.off': 'сложная линия',
+  'bench.role.jungle': 'лес',
+  'bench.role.unknown': 'линия не определена',
+  'bench.status.missingRole':
+    'Линия игрока не определена — сравнение с нормативами не выполняется.',
+  'bench.status.missingPatch':
+    'Патч матча не подтверждён — сравнение с нормативами недоступно.',
+  'bench.status.patchMismatch':
+    'Матч относится к другому патчу: нормативы доступны только за патч {patch}.',
+  'bench.status.intervalMismatch':
+    'Отчёт построен за интервал {actual}, а нормативы — за {expected} минут: сравнение не выполняется.',
+  'bench.status.noBenchmark':
+    'Для этого героя и линии нет сопоставимых данных за текущий патч.',
+  'bench.status.insufficient': 'недостаточно наблюдений',
+  'bench.status.noSample': 'нет наблюдений',
+  'bench.status.missingActual': 'нет данных у игрока',
+  'bench.status.medianOnly': 'только медиана (малая выборка)',
+  'bench.meta': 'Норматив: патч {patch}, источник — {source}, снапшот от {generated}.',
+  'bench.limitations':
+    'Это статистика, а не оценка игры: значение выше или ниже медианы не означает «хорошо» или «плохо». Выборка — открытые данные OpenDota; MMR игроков не учитывается.',
+  'bench.methodVersion':
+    'Методика {version}: медиана и квартили (p25/p50/p75). Пороги показа: медиана от {medianOnly} наблюдений, квартили от {full}.',
+  'bench.unavailable':
+    'Нормативы недоступны: снапшот не загружен или не прошёл проверку.',
 } as const
 
 export type TranslationKey = keyof typeof ru

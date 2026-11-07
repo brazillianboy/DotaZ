@@ -561,4 +561,40 @@ export const en: Record<TranslationKey, string> = {
     'The match data snapshot is missing: the report record is unfinished (payload not written).',
   'limitation.report.analysis_payload.missing':
     'The analysis snapshot is missing: the report record is unfinished (payload not written).',
+
+  // --- Task 16: first 15 minutes benchmarks ---
+  'bench.title': 'First 15 minutes benchmarks ({interval})',
+  'bench.metric.lastHits': 'LH at 15:00',
+  'bench.metric.gold': 'Gold at 15:00',
+  'bench.metric.xp': 'XP at 15:00',
+  'bench.column.metric': 'Metric',
+  'bench.column.actual': 'Actual',
+  'bench.column.median': 'Median',
+  'bench.column.range': 'p25–p75',
+  'bench.column.diff': 'Difference',
+  'bench.column.sample': 'Sample',
+  'bench.role.safe': 'safe lane',
+  'bench.role.mid': 'mid lane',
+  'bench.role.off': 'off lane',
+  'bench.role.jungle': 'jungle',
+  'bench.role.unknown': 'lane not determined',
+  'bench.status.missingRole':
+    'The player lane is not determined, so no benchmark comparison is performed.',
+  'bench.status.missingPatch': 'The match patch is not confirmed: benchmarks are unavailable.',
+  'bench.status.patchMismatch':
+    'The match belongs to a different patch: benchmarks are available only for patch {patch}.',
+  'bench.status.intervalMismatch':
+    'The report covers {actual} while benchmarks cover {expected} minutes: no comparison is performed.',
+  'bench.status.noBenchmark':
+    'No comparable data for this hero and lane in the current patch.',
+  'bench.status.insufficient': 'not enough observations',
+  'bench.status.noSample': 'no observations',
+  'bench.status.missingActual': 'no player data',
+  'bench.status.medianOnly': 'median only (small sample)',
+  'bench.meta': 'Benchmark: patch {patch}, source {source}, snapshot from {generated}.',
+  'bench.limitations':
+    'This is statistics, not a judgement: being above or below the median does not mean "good" or "bad". The sample is public OpenDota data; player MMR is not taken into account.',
+  'bench.methodVersion':
+    'Method {version}: median and quartiles (p25/p50/p75). Display thresholds: median from {medianOnly} observations, quartiles from {full}.',
+  'bench.unavailable': 'Benchmarks are unavailable: the snapshot is missing or failed validation.',
 } as const

@@ -258,6 +258,9 @@ function normalizePlayer(raw: unknown): NormalizedPlayer | null {
     account_id: normalizeAccountId(raw.account_id),
     inventory_ids: collectInventoryIds(raw),
     neutral_item_id: collectNeutralItemId(raw),
+    // Класс линии (Task 16): факт матча OpenDota, не позиция 1–5.
+    lane: toIntegerOrNull(raw.lane),
+    lane_role: toIntegerOrNull(raw.lane_role),
     ability_upgrades: collectAbilityUpgrades(raw.ability_upgrades_arr),
     // Полный журнал покупок за матч: нужен секции собранных предметов.
     purchaseLog: collectPurchaseLog(raw.purchase_log),
@@ -280,6 +283,7 @@ export function createEmptyNormalizedMatch(): NormalizedMatch {
     game_mode: null,
     region: null,
     start_time: null,
+    patch: null,
     tower_status_radiant: null,
     tower_status_dire: null,
     barracks_status_radiant: null,
@@ -318,6 +322,8 @@ export function normalizeMatch(raw: unknown): NormalizedMatch {
     game_mode: normalizeCode(raw.game_mode),
     region: normalizeCode(raw.region),
     start_time: normalizeStartTime(raw.start_time),
+    // Числовой id патча (Task 16): сравнение с нормативами только в пределах патча.
+    patch: normalizeNonNegativeInteger(raw.patch),
     tower_status_radiant: normalizeNonNegativeInteger(raw.tower_status_radiant),
     tower_status_dire: normalizeNonNegativeInteger(raw.tower_status_dire),
     barracks_status_radiant: normalizeNonNegativeInteger(raw.barracks_status_radiant),

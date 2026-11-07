@@ -193,6 +193,7 @@ export function buildMatchSnapshot(match: NormalizedMatch, requestedId: string):
       game_mode: match.game_mode,
       region: match.region,
       start_time: match.start_time,
+      patch: match.patch,
       tower_status_radiant: match.tower_status_radiant,
       tower_status_dire: match.tower_status_dire,
       barracks_status_radiant: match.barracks_status_radiant,
@@ -857,6 +858,9 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
   const accountId = parseOptionalNullableInteger(value.account_id)
   const inventoryIds = parseOptionalInventoryIds(value.inventory_ids)
   const neutralItemId = parseOptionalNullableInteger(value.neutral_item_id)
+  // Task 16: класс линии. В снимках v1/v2 этих полей нет → `null` (совместимость).
+  const lane = parseOptionalNullableInteger(value.lane)
+  const laneRole = parseOptionalNullableInteger(value.lane_role)
   const abilityUpgrades = parseOptionalPositiveIntegerArray(value.ability_upgrades)
   const purchaseLog = parseOptionalPurchases(value.purchaseLog)
   const laning = parseLaningStageData(value.laning)
@@ -881,6 +885,8 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
     !accountId.ok ||
     !inventoryIds.ok ||
     !neutralItemId.ok ||
+    !lane.ok ||
+    !laneRole.ok ||
     !abilityUpgrades.ok ||
     !purchaseLog.ok ||
     !laning.ok
@@ -909,6 +915,8 @@ function parseNormalizedPlayer(value: unknown): Parse<NormalizedPlayer> {
       account_id: accountId.value,
       inventory_ids: inventoryIds.value,
       neutral_item_id: neutralItemId.value,
+      lane: lane.value,
+      lane_role: laneRole.value,
       ability_upgrades: abilityUpgrades.value,
       purchaseLog: purchaseLog.value,
       laning: laning.value,
@@ -981,6 +989,11 @@ function parseNormalizedMatch(value: unknown): Parse<NormalizedMatch> {
       game_mode: gameMode.value,
       region: region.value,
       start_time: startTime.value,
+      // Task 16: числовой id патча. В снимках v1/v2 поля нет → `null` (совместимость).
+      patch:
+        typeof value.patch === 'number' && Number.isInteger(value.patch) && value.patch >= 0
+          ? value.patch
+          : null,
       tower_status_radiant: towerStatusRadiant.value,
       tower_status_dire: towerStatusDire.value,
       barracks_status_radiant: barracksStatusRadiant.value,

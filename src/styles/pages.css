@@ -1839,3 +1839,37 @@
     flex: 1 1 100%;
   }
 }
+
+/* Task 16: first 15 minutes benchmark comparison table. */
+.bench-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  margin-top: 8px;
+}
+
+.bench-table th,
+.bench-table td {
+  padding: 6px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.bench-table thead th {
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+.bench-table tbody th {
+  font-weight: 500;
+}
+
+.bench-table tr[data-status='insufficient'] td,
+.bench-table tr[data-status='no-sample'] td,
+.bench-table tr[data-status='missing-actual'] td {
+  opacity: 0.75;
+}
+
+.bench-table td {
+  white-space: nowrap;
+}
