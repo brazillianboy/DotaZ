@@ -6,6 +6,7 @@ import AnalysisReport from '../components/AnalysisReport'
 import BuildingsMap from '../components/BuildingsMap'
 import LaneReport from '../components/LaneReport'
 import LaningBenchmarks from '../components/LaningBenchmarks'
+import PlayerInsights from '../components/PlayerInsights'
 import MatchHeader from '../components/MatchHeader'
 import MatchParseNotice from '../components/MatchParseNotice'
 import PlayerStats from '../components/PlayerStats'
@@ -375,11 +376,18 @@ export default function MatchPage() {
               <PlayerStats player={selectedPlayer} />
               <LaneReport player={selectedPlayer} />
         {benchmarkSnapshot !== undefined && (
-          <LaningBenchmarks
-            player={selectedPlayer}
-            patch={(enrichedMatch ?? state.view.match).patch}
-            snapshot={benchmarkSnapshot}
-          />
+          <>
+            <LaningBenchmarks
+              player={selectedPlayer}
+              patch={(enrichedMatch ?? state.view.match).patch}
+              snapshot={benchmarkSnapshot}
+            />
+            <PlayerInsights
+              player={selectedPlayer}
+              patch={(enrichedMatch ?? state.view.match).patch}
+              snapshot={benchmarkSnapshot}
+            />
+          </>
         )}
               <AnalysisReport
                 match={enrichedMatch ?? state.view.match}

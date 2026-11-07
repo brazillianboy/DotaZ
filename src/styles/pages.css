@@ -1873,3 +1873,42 @@
 .bench-table td {
   white-space: nowrap;
 }
+
+/* Task 17: insights and recommendations. */
+.insights-list {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.insight {
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+}
+
+.insight[data-severity='warning'] {
+  border-color: rgba(214, 158, 46, 0.45);
+}
+
+.insight__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.insight__title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.insight__text {
+  margin: 8px 0 6px;
+}
+
+.insight__recommendation {
+  margin: 6px 0 0;
+}

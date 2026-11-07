@@ -597,4 +597,61 @@ export const en: Record<TranslationKey, string> = {
   'bench.methodVersion':
     'Method {version}: median and quartiles (p25/p50/p75). Display thresholds: median from {medianOnly} observations, quartiles from {full}.',
   'bench.unavailable': 'Benchmarks are unavailable: the snapshot is missing or failed validation.',
+
+  // --- Task 17: findings and recommendations ---
+  'insights.title': 'Performance Insights & Recommendations',
+  'insights.lead':
+    'Observations for the first 15 minutes. A deviation from the median does not prove a mistake — it is a reason to review the episode.',
+  'insights.severity.warning': 'Worth a look',
+  'insights.severity.info': 'Observation',
+  'insights.source.benchmark': 'Compared with patch {patch} benchmarks (OpenDota)',
+  'insights.source.event': 'Confirmed match events (OpenDota)',
+  'insights.recommendationLabel': 'Recommendation',
+  'insights.empty':
+    'No supported issues found: the available metrics stay within the typical range.',
+  'insights.unavailable': 'Analysis is unavailable: no early-game data for the selected player.',
+  'insights.noBenchmark':
+    'Statistical comparisons are unavailable (benchmarks not loaded) — only confirmed events are shown.',
+  'insights.hidden': 'Additional observations hidden: {count}.',
+  'insights.method':
+    'Recommendation rules {version}; benchmarks {benchmark}. This comparison is not a judgement of play quality.',
+  'insights.sample': 'sample {sample}',
+  'insights.smallSample': 'small sample — median-only comparison',
+  'insights.lh.belowRange.title': 'Last hits below the typical range',
+  'insights.lh.belowMedian.title': 'Last hits below the median',
+  'insights.lh.aboveRange.title': 'Last hits above the typical range',
+  'insights.gold.belowRange.title': 'Gold below the typical range',
+  'insights.gold.belowMedian.title': 'Gold below the median',
+  'insights.gold.aboveRange.title': 'Gold above the typical range',
+  'insights.xp.belowRange.title': 'Experience below the typical range',
+  'insights.xp.belowMedian.title': 'Experience below the median',
+  'insights.xp.aboveRange.title': 'Experience above the typical range',
+  'insights.metric.lastHits.description':
+    'At 15:00 the player has {actual} last hits. The median for this hero and lane is {median} (p25–p75: {p25}–{p75}); {sample}.',
+  'insights.metric.lastHits.recommendation':
+    'Review the first 15 minutes: last-hit consistency and farming opportunities near the lane.',
+  'insights.metric.gold.description':
+    'At 15:00 the player has {actual} gold. The median for this hero and lane is {median} (p25–p75: {p25}–{p75}); {sample}.',
+  'insights.metric.gold.recommendation':
+    'Check farming efficiency and the stretches with almost no gold income.',
+  'insights.metric.xp.description':
+    'At 15:00 the player has {actual} experience. The median for this hero and lane is {median} (p25–p75: {p25}–{p75}); {sample}.',
+  'insights.metric.xp.recommendation':
+    'Look at lane presence and the time spent away from experience-generating areas.',
+  'insights.farming.title': 'Farming below the typical range',
+  'insights.farming.description':
+    'At 15:00: {lhActual} last hits (median {lhMedian}) and {goldActual} gold (median {goldMedian}); {sample}.',
+  'insights.farming.recommendation':
+    'Review the first 15 minutes: last-hit consistency and periods without gold growth. These data do not establish causation.',
+  'insights.deaths.warning.title': 'Multiple deaths in the first 15 minutes: {count}',
+  'insights.deaths.info.title': 'A death in the first 15 minutes: {count}',
+  'insights.deaths.description':
+    'Confirmed event: deaths in the interval — {count}. The OpenDota data contains no causes or circumstances.',
+  'insights.deaths.recommendation':
+    'Review those deaths: whether they interrupted farming and experience gain.',
+  'insights.kills.title': 'Kill participation: {count}',
+  'insights.kills.description':
+    'Confirmed kills involving the player in the first 15 minutes: {count}.',
+  'insights.kills.recommendation':
+    'Compare with the role task: fewer last hits and kills for a support is not a mistake.',
 } as const

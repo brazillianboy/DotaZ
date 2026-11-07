@@ -615,6 +615,63 @@ export const ru = {
     'Методика {version}: медиана и квартили (p25/p50/p75). Пороги показа: медиана от {medianOnly} наблюдений, квартили от {full}.',
   'bench.unavailable':
     'Нормативы недоступны: снапшот не загружен или не прошёл проверку.',
+
+  // --- Task 17: находки и рекомендации ---
+  'insights.title': 'Анализ ошибок и рекомендации',
+  'insights.lead':
+    'Наблюдения по первым 15 минутам. Отклонение от медианы не доказывает ошибку — это повод пересмотреть эпизод.',
+  'insights.severity.warning': 'Стоит посмотреть',
+  'insights.severity.info': 'Наблюдение',
+  'insights.source.benchmark': 'Сравнение с нормативами {patch} (OpenDota)',
+  'insights.source.event': 'Подтверждённые события матча (OpenDota)',
+  'insights.recommendationLabel': 'Рекомендация',
+  'insights.empty':
+    'Поддерживаемых проблем не обнаружено: доступные показатели не выходят за границы типичного диапазона.',
+  'insights.unavailable': 'Анализ недоступен: для выбранного игрока нет данных ранней стадии.',
+  'insights.noBenchmark':
+    'Статистические сравнения недоступны (нормативы не загружены) — показаны только подтверждённые события.',
+  'insights.hidden': 'Дополнительных наблюдений скрыто: {count}.',
+  'insights.method':
+    'Правила рекомендаций {version}; нормативы {benchmark}. Сравнение не является оценкой качества игры.',
+  'insights.sample': 'выборка {sample}',
+  'insights.smallSample': 'малая выборка — сравнение только с медианой',
+  'insights.lh.belowRange.title': 'Добивания ниже типичного диапазона',
+  'insights.lh.belowMedian.title': 'Добивания ниже медианы',
+  'insights.lh.aboveRange.title': 'Добивания выше типичного диапазона',
+  'insights.gold.belowRange.title': 'Золото ниже типичного диапазона',
+  'insights.gold.belowMedian.title': 'Золото ниже медианы',
+  'insights.gold.aboveRange.title': 'Золото выше типичного диапазона',
+  'insights.xp.belowRange.title': 'Опыт ниже типичного диапазона',
+  'insights.xp.belowMedian.title': 'Опыт ниже медианы',
+  'insights.xp.aboveRange.title': 'Опыт выше типичного диапазона',
+  'insights.metric.lastHits.description':
+    'К 15:00 у игрока {actual} добитых крипов. Медиана для этого героя и линии — {median} (p25–p75: {p25}–{p75}); {sample}.',
+  'insights.metric.lastHits.recommendation':
+    'Пересмотри первые 15 минут: стабильность добивания и возможности фарма рядом с линией.',
+  'insights.metric.gold.description':
+    'К 15:00 накоплено {actual} золота. Медиана для этого героя и линии — {median} (p25–p75: {p25}–{p75}); {sample}.',
+  'insights.metric.gold.recommendation':
+    'Проверь эффективность фарма и отрезки, когда золото почти не поступало.',
+  'insights.metric.xp.description':
+    'К 15:00 накоплено {actual} опыта. Медиана для этого героя и линии — {median} (p25–p75: {p25}–{p75}); {sample}.',
+  'insights.metric.xp.recommendation':
+    'Обрати внимание на присутствие на линии и время вне зон получения опыта.',
+  'insights.farming.title': 'Фарм ниже типичного диапазона',
+  'insights.farming.description':
+    'К 15:00: {lhActual} добитых (медиана {lhMedian}) и {goldActual} золота (медиана {goldMedian}); {sample}.',
+  'insights.farming.recommendation':
+    'Разбери первые 15 минут: стабильность добивания и периоды без прироста золота. Причинность по этим данным не определяется.',
+  'insights.deaths.warning.title': 'Несколько смертей в первые 15 минут: {count}',
+  'insights.deaths.info.title': 'Смерть в первые 15 минут: {count}',
+  'insights.deaths.description':
+    'Подтверждено событие: смертей за интервал — {count}. Причины и обстоятельства в данных OpenDota отсутствуют.',
+  'insights.deaths.recommendation':
+    'Разбери эпизоды смертей: прерывали ли они фарм и получение опыта.',
+  'insights.kills.title': 'Участие в убийствах: {count}',
+  'insights.kills.description':
+    'Подтверждено убийств с участием игрока в первые 15 минут: {count}.',
+  'insights.kills.recommendation':
+    'Сравнивай с задачей роли: у поддержки меньше добиваний и убийств — это не ошибка.',
 } as const
 
 export type TranslationKey = keyof typeof ru
