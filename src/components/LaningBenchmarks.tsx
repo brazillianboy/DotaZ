@@ -9,6 +9,7 @@ import {
   type MetricComparison,
 } from '../lib/benchmarks'
 import { heroName } from '../lib/heroes'
+import { LANING_INTERVAL_LABEL } from '../lib/laning'
 import type { NormalizedPlayer } from '../types/match'
 
 interface LaningBenchmarksProps {
@@ -116,10 +117,17 @@ export default function LaningBenchmarks({ player, patch, snapshot }: LaningBenc
           roleLabel(player.lane_role) ?? t('bench.role.unknown')
         }`
 
+  /**
+   * Подпись интервала в заголовке — это интервал САМИХ нормативов, а не глобальная
+   * подпись периода из словаря (`period.laning` остаётся исторической меткой
+   * 00:00–10:00 для локализации старых наблюдений и здесь не используется).
+   */
+  const intervalLabel = snapshot === null ? LANING_INTERVAL_LABEL : snapshot.interval.label
+
   return (
     <section className="lane-report panel" aria-labelledby="benchmarks-title">
       <h2 className="match-section__title" id="benchmarks-title">
-        {t('bench.title', { interval: t('period.laning') })}
+        {t('bench.title', { interval: intervalLabel })}
       </h2>
 
       {subject !== null && <p className="lane-report__subject">{subject}</p>}

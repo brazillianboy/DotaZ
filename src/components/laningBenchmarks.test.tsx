@@ -94,18 +94,27 @@ describe('LaningBenchmarks — отображение', () => {
     expect(html).toContain('130')
     expect(html).toContain('400')
     expect(html).toContain('7.41')
+    // Заголовок показывает интервал нормативов, а не устаревшую метку 10 минут.
+    expect(html).toContain('00:00–15:00')
+    expect(html).not.toContain('00:00–10:00')
   })
 
   it('в английской локали не содержит кириллицы', () => {
     const html = render('en', { player: makePlayer(), patch: 60, snapshot: makeSnapshot() })
     expect(html).toContain('LH at 15:00')
     expect(html).toContain('Median')
+    expect(html).toContain('First 15-Minute Benchmarks')
+    expect(html).toContain('00:00–15:00')
+    expect(html).not.toContain('00:00–10:00')
     expect(html).not.toMatch(CYRILLIC)
   })
 
   it('без снапшота показывает честное отсутствие нормативов', () => {
     const html = render('ru', { player: makePlayer(), patch: 60, snapshot: null })
     expect(html).toContain('Нормативы недоступны')
+    // Даже без данных заголовок не должен вводить в заблуждение про 10 минут.
+    expect(html).toContain('00:00–15:00')
+    expect(html).not.toContain('00:00–10:00')
   })
 
   it('при чужом патче не показывает числа норматива', () => {
@@ -128,6 +137,9 @@ describe('LaningBenchmarks — отображение', () => {
     const html = render('ru', { player: legacy, patch: 60, snapshot: makeSnapshot() })
     expect(html).toContain('сравнение не выполняется')
     expect(html).not.toContain('Медиана')
+    // Заголовок описывает интервал нормативов (15 минут), а отказ — интервал отчёта (10 минут).
+    expect(html).toContain('00:00–15:00')
+    expect(html).toContain('00:00–10:00')
   })
 
   it('малая выборка по метрике не выдаёт кварталы', () => {

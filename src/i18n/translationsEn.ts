@@ -563,7 +563,7 @@ export const en: Record<TranslationKey, string> = {
     'The analysis snapshot is missing: the report record is unfinished (payload not written).',
 
   // --- Task 16: first 15 minutes benchmarks ---
-  'bench.title': 'First 15 minutes benchmarks ({interval})',
+  'bench.title': 'First 15-Minute Benchmarks ({interval})',
   'bench.metric.lastHits': 'LH at 15:00',
   'bench.metric.gold': 'Gold at 15:00',
   'bench.metric.xp': 'XP at 15:00',

@@ -1,5 +1,5 @@
 import { filterEarlyGamePurchases, itemDisplayName, sortPurchasesChronologically } from '../lib/items'
-import { hasLaningFacts, laningIntervalEndLabel } from '../lib/laning'
+import { LANING_INTERVAL_LABEL, hasLaningFacts, laningIntervalEndLabel } from '../lib/laning'
 import type { NormalizedPlayer } from '../types/match'
 import { useI18n } from '../i18n/I18nContext'
 import { durationText, laneEfficiencyText, playerText, statText } from '../i18n/viewLabels'
@@ -34,7 +34,7 @@ export default function LaneReport({ player }: LaneReportProps) {
     return (
       <section className="lane-report panel" aria-labelledby="lane-report-title">
         <h2 className="match-section__title" id="lane-report-title">
-          {t('laning.title', { interval: t('period.laning') })}
+          {t('laning.title', { interval: LANING_INTERVAL_LABEL })}
         </h2>
         <p className="stub__text">{t('laning.empty')}</p>
       </section>
