@@ -1,5 +1,5 @@
 import { renderToStaticMarkup } from 'react-dom/server'
-import { StaticRouter } from 'react-router-dom/server'
+import { StaticRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
 import { AuthContext, type AuthContextValue } from '../contexts/AuthContext'
