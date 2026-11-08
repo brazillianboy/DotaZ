@@ -654,4 +654,53 @@ export const en: Record<TranslationKey, string> = {
     'Confirmed kills involving the player in the first 15 minutes: {count}.',
   'insights.kills.recommendation':
     'Compare with the role task: fewer last hits and kills for a support is not a mistake.',
+
+  // --- Task 18: item purchase timings ---
+  'itemTimings.title': 'Item Purchase Timing Analysis',
+  'itemTimings.lead':
+    'Timeline of the selected player`s confirmed purchases. The time is the OpenDota purchase event, not the moment the item was assembled.',
+  'itemTimings.noLog': 'Purchase log is unavailable: timings cannot be shown.',
+  'itemTimings.empty': 'The purchase log contains no events to display.',
+  'itemTimings.repeat': 'purchase #{count}',
+  'itemTimings.unknown': 'item outside the catalog',
+  'itemTimings.median': 'median {time}',
+  'itemTimings.sample': 'sample {count}',
+  'itemTimings.hiddenConsumables': 'Ordinary consumables hidden: {count}.',
+  'itemTimings.hiddenRecipes': 'Recipes hidden: {count}.',
+  'itemTimings.repeated': 'Items purchased more than once: {count}.',
+  'itemTimings.hiddenByLimit': 'Events not shown due to the limit: {count}.',
+  'itemTimings.droppedInvalid':
+    'Records without a valid timestamp dropped: {count} (timestamps are never replaced with zero).',
+  'itemTimings.noBenchmarks':
+    'Timing comparison is unavailable: the dataset is not loaded or not confirmed. Only actual purchase times are shown.',
+  'itemTimings.medianNote':
+    'The comparison describes players who bought the item. The median is not an "optimal" time, and a late purchase is not a mistake.',
+  'itemTimings.class.early': 'earlier than typical',
+  'itemTimings.class.typical': 'within the typical range',
+  'itemTimings.class.late': 'later than typical',
+  'itemTimings.class.insufficient': 'not enough data',
+  'itemTimings.class.noSample': 'no observations',
+  'itemTimings.purchased': 'purchased {time}',
+  'itemTimings.col.median': 'median',
+  'itemTimings.col.range': 'range',
+  'itemTimings.col.difference': 'difference',
+  'itemTimings.col.sample': 'sample',
+  'itemTimings.col.timing': 'timing',
+  'itemTimings.insufficientSample':
+    'The sample of {count} observations is below the {min} threshold: no timing class is assigned and no scale is drawn.',
+  'itemTimings.rowNoBenchmark': 'No benchmark for this hero, lane and patch.',
+  'itemTimings.repeatNoCompare': 'Repeated purchase: the comparison applies to the first purchase only.',
+  'itemTimings.scale.aria':
+    'Timing scale: purchase {actual}; median {median}; typical range {p25}–{p75}; sample of {count} observations; {position}.',
+  'itemTimings.scale.legend': '◆ purchase · │ median · ▬ p25–p75',
+  'itemTimings.scale.position.before': 'the purchase is earlier than the typical range',
+  'itemTimings.scale.position.in': 'the purchase is inside the typical range',
+  'itemTimings.scale.position.after': 'the purchase is later than the typical range',
+  'itemTimings.thresholdNote':
+    'The classification and the scale appear only for a sample of at least {min} observations. The threshold is a product rule, not proof of statistical significance.',
+  'itemTimings.thresholds':
+    'Snapshot thresholds: bucket storage {store}, percentiles {full}, classification {classify} observations.',
+  'itemTimings.source': 'Source: OpenDota purchase log (purchase_log).',
+  'itemTimings.method':
+    'Timing method {version}; patch {patch}. Comparisons only for the same hero, lane and patch.',
 } as const

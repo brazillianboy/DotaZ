@@ -672,6 +672,55 @@ export const ru = {
     'Подтверждено убийств с участием игрока в первые 15 минут: {count}.',
   'insights.kills.recommendation':
     'Сравнивай с задачей роли: у поддержки меньше добиваний и убийств — это не ошибка.',
+
+  // --- Task 18: тайминги покупок предметов ---
+  'itemTimings.title': 'Анализ покупки предметов',
+  'itemTimings.lead':
+    'Таймлайн подтверждённых покупок выбранного игрока. Время — момент события из журнала OpenDota, а не момент завершения сборки предмета.',
+  'itemTimings.noLog': 'Журнал покупок недоступен: показать тайминги нельзя.',
+  'itemTimings.empty': 'В журнале покупок нет событий для отображения.',
+  'itemTimings.repeat': 'покупка №{count}',
+  'itemTimings.unknown': 'предмет вне каталога',
+  'itemTimings.median': 'медиана {time}',
+  'itemTimings.sample': 'выборка {count}',
+  'itemTimings.hiddenConsumables': 'Скрыто обычных расходников: {count}.',
+  'itemTimings.hiddenRecipes': 'Скрыто рецептов: {count}.',
+  'itemTimings.repeated': 'Предметов с повторными покупками: {count}.',
+  'itemTimings.hiddenByLimit': 'Событий не показано из-за лимита: {count}.',
+  'itemTimings.droppedInvalid':
+    'Записей без корректного времени отброшено: {count} (время не подменяется нулём).',
+  'itemTimings.noBenchmarks':
+    'Сравнение с нормативами таймингов недоступно: датасет не загружен или не подтверждён. Показаны только фактические времена покупок.',
+  'itemTimings.medianNote':
+    'Сравнение описывает статистику игроков, купивших предмет. Медиана — не «оптимальное» время, а поздняя покупка не является ошибкой.',
+  'itemTimings.class.early': 'раньше типичного',
+  'itemTimings.class.typical': 'в типичном диапазоне',
+  'itemTimings.class.late': 'позже типичного',
+  'itemTimings.class.insufficient': 'мало данных',
+  'itemTimings.class.noSample': 'нет наблюдений',
+  'itemTimings.purchased': 'куплено {time}',
+  'itemTimings.col.median': 'медиана',
+  'itemTimings.col.range': 'диапазон',
+  'itemTimings.col.difference': 'отличие',
+  'itemTimings.col.sample': 'выборка',
+  'itemTimings.col.timing': 'тайминг',
+  'itemTimings.insufficientSample':
+    'Выборка {count} наблюдений меньше порога {min}: класс тайминга не присваивается, шкала не строится.',
+  'itemTimings.rowNoBenchmark': 'Нет норматива для этого героя, линии и патча.',
+  'itemTimings.repeatNoCompare': 'Повторная покупка: сравнение относится только к первой.',
+  'itemTimings.scale.aria':
+    'Шкала тайминга: покупка {actual}; медиана {median}; типичный диапазон {p25}–{p75}; выборка {count} наблюдений; {position}.',
+  'itemTimings.scale.legend': '◆ покупка · │ медиана · ▬ p25–p75',
+  'itemTimings.scale.position.before': 'покупка раньше типичного диапазона',
+  'itemTimings.scale.position.in': 'покупка внутри типичного диапазона',
+  'itemTimings.scale.position.after': 'покупка позже типичного диапазона',
+  'itemTimings.thresholdNote':
+    'Классификация и шкала показываются только при выборке не менее {min} наблюдений. Порог — продуктовое правило, а не доказательство статистической значимости.',
+  'itemTimings.thresholds':
+    'Пороги снапшота: сохранение бакета {store}, квартили {full}, классификация {classify} наблюдений.',
+  'itemTimings.source': 'Источник: журнал покупок OpenDota (purchase_log).',
+  'itemTimings.method':
+    'Методика таймингов {version}; патч {patch}. Сравнение — только для того же героя, линии и патча.',
 } as const
 
 export type TranslationKey = keyof typeof ru

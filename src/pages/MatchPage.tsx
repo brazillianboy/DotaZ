@@ -7,6 +7,7 @@ import BuildingsMap from '../components/BuildingsMap'
 import LaneReport from '../components/LaneReport'
 import LaningBenchmarks from '../components/LaningBenchmarks'
 import PlayerInsights from '../components/PlayerInsights'
+import ItemTimings from '../components/ItemTimings'
 import MatchHeader from '../components/MatchHeader'
 import MatchParseNotice from '../components/MatchParseNotice'
 import PlayerStats from '../components/PlayerStats'
@@ -37,6 +38,7 @@ import {
 import { createSupabaseMatchReportsClient } from '../lib/matchReportsSupabase'
 import type { BenchmarkSnapshot } from '../lib/benchmarks'
 import { loadBenchmarkSnapshot } from '../lib/benchmarkSnapshot'
+import { loadItemTimingSnapshot, type ItemTimingSnapshot } from '../lib/itemTimings'
 import { findPlayerBySlot, pickDefaultPlayerSlot } from '../lib/matchView'
 import { fetchMatchById, isRetryableError, validateMatchId, type OpenDotaError } from '../lib/opendota'
 import { getSupabase } from '../lib/supabase'
@@ -111,6 +113,10 @@ export default function MatchPage() {
   const [enrichedMatch, setEnrichedMatch] = useState<NormalizedMatch | null>(null)
   /** Нормативы 15-й минуты (Task 16): `undefined` — ещё грузятся, `null` — недоступны. */
   const [benchmarkSnapshot, setBenchmarkSnapshot] = useState<BenchmarkSnapshot | null | undefined>(
+    undefined,
+  )
+  /** Нормативы таймингов предметов (Task 18): `undefined` — грузятся, `null` — недоступны. */
+  const [itemTimingSnapshot, setItemTimingSnapshot] = useState<ItemTimingSnapshot | null | undefined>(
     undefined,
   )
   const [enrichmentState, setEnrichmentState] = useState<'idle' | 'loading' | 'enriched' | 'unavailable'>(
@@ -321,6 +327,11 @@ export default function MatchPage() {
         setBenchmarkSnapshot(snapshot)
       }
     })
+    void loadItemTimingSnapshot().then((snapshot) => {
+      if (active) {
+        setItemTimingSnapshot(snapshot)
+      }
+    })
     return () => {
       active = false
     }
@@ -388,6 +399,13 @@ export default function MatchPage() {
               snapshot={benchmarkSnapshot}
             />
           </>
+        )}
+        {itemTimingSnapshot !== undefined && (
+          <ItemTimings
+            player={selectedPlayer}
+            patch={(enrichedMatch ?? state.view.match).patch}
+            snapshot={itemTimingSnapshot}
+          />
         )}
               <AnalysisReport
                 match={enrichedMatch ?? state.view.match}

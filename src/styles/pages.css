@@ -1912,3 +1912,209 @@
 .insight__recommendation {
   margin: 6px 0 0;
 }
+
+/* Task 18: item purchase timeline. */
+.item-timeline {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+
+.item-timeline__item {
+  display: grid;
+  gap: 6px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.item-timeline__main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 18px;
+  flex-wrap: wrap;
+}
+
+.item-timeline__identity {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.item-timeline__icon {
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.06);
+  flex: none;
+}
+
+.item-timeline__name {
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.item-timeline__actual {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+  white-space: nowrap;
+}
+
+.item-timeline__stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 2px 16px;
+  margin: 0;
+  text-align: right;
+}
+
+.item-timeline__stat {
+  display: grid;
+  gap: 1px;
+}
+
+.item-timeline__stat dt {
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+
+.item-timeline__stat dd {
+  margin: 0;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.item-timeline__stat dd[data-timing-class='late'] {
+  color: #e0b04a;
+}
+
+.item-timeline__stat dd[data-timing-class='early'] {
+  color: #6fbf73;
+}
+
+.item-timeline__note {
+  margin: 0;
+  font-size: 0.8rem;
+  opacity: 0.75;
+}
+
+/* Компактная шкала тайминга: зона p25–p75, медиана и фактическая покупка. */
+.item-timing-scale {
+  display: grid;
+  gap: 2px;
+  margin-top: 4px;
+}
+
+.item-timing-scale__track {
+  position: relative;
+  height: 20px;
+  margin-top: 14px;
+}
+
+.item-timing-scale__track::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 2px;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.item-timing-scale__range {
+  position: absolute;
+  top: 50%;
+  height: 10px;
+  transform: translateY(-50%);
+  border-radius: 2px;
+  border-left: 1px solid rgba(126, 178, 255, 0.6);
+  border-right: 1px solid rgba(126, 178, 255, 0.6);
+  background-color: rgba(126, 178, 255, 0.16);
+  background-image: repeating-linear-gradient(
+    45deg,
+    rgba(126, 178, 255, 0.22) 0 3px,
+    transparent 3px 7px
+  );
+}
+
+.item-timing-scale__median {
+  position: absolute;
+  top: 50%;
+  width: 2px;
+  height: 16px;
+  transform: translate(-50%, -50%);
+  background: rgba(255, 255, 255, 0.8);
+}
+
+.item-timing-scale__actual {
+  position: absolute;
+  top: 50%;
+  width: 12px;
+  height: 12px;
+  transform: translate(-50%, -50%);
+}
+
+/* Ромб рисуется псевдоэлементом: clip-path на самом маркере обрезал бы подпись. */
+.item-timing-scale__actual::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  background: #9fb8d4;
+}
+
+.item-timing-scale__actual[data-position='before-range']::before {
+  background: #6fbf73;
+}
+
+.item-timing-scale__actual[data-position='after-range']::before {
+  background: #e0b04a;
+}
+
+.item-timing-scale__actual-label {
+  position: absolute;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.item-timing-scale__axis {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+}
+
+.item-timing-scale__legend {
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .item-timeline__main {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .item-timeline__stats {
+    justify-content: flex-start;
+    text-align: left;
+  }
+
+  .item-timing-scale__legend {
+    font-size: 0.65rem;
+  }
+}
