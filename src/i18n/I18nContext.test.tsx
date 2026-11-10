@@ -81,11 +81,14 @@ describe('Провайдер локализации', () => {
 
     expect(ruHtml).toContain('Матч 9007760151')
     expect(enHtml).toContain('Match 9007760151')
-    // Факты не зависят от языка: ID, длительность в MM:SS и победитель.
-    for (const fact of ['9007760151', '34:29', 'Radiant']) {
+    // Факты не зависят от языка: ID матча и длительность в MM:SS совпадают.
+    for (const fact of ['9007760151', '34:29']) {
       expect(ruHtml, `ru:${fact}`).toContain(fact)
       expect(enHtml, `en:${fact}`).toContain(fact)
     }
+    // Победитель — тот же факт, но подпись стороны локализуется (RU: «Свет», EN: Radiant).
+    expect(ruHtml).toContain('Победа Света')
+    expect(enHtml).toContain('Radiant')
   })
 })
 

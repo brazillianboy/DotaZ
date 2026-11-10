@@ -232,9 +232,11 @@ export const ru = {
   'match.stats.team': 'Сторона',
   'match.stats.heroId': 'Герой (hero_id)',
   'match.stats.kda': 'K / D / A',
-  'match.stats.gpm': 'GPM',
-  'match.stats.xpm': 'XPM',
-  'match.stats.lastHits': 'Last hits',
+  'match.stats.gpm': 'ЗПМ',
+  'match.stats.xpm': 'ОПМ',
+  'match.stats.lastHits': 'Ластхиты',
+  'match.stats.gpmHint': 'Золото в минуту',
+  'match.stats.xpmHint': 'Опыт в минуту',
   'match.stats.hint':
     'Значения приведены как есть из ответа OpenDota. «Нет данных» означает отсутствие поля в ответе и не заменяется нулём. Last hits — показатель за матч, а не за первые 10 минут. Разбор линии и наблюдения показаны ниже.',
 
@@ -359,8 +361,8 @@ export const ru = {
     'Запрос обработки отправляется автоматически — отдельная кнопка не нужна. Повторные запросы ограничены, чтобы не расходовать лимиты OpenDota.',
 
   // --- Шапка матча (Task 15) ---
-  'matchHeader.winnerRadiant': 'Победа Radiant',
-  'matchHeader.winnerDire': 'Победа Dire',
+  'matchHeader.winnerRadiant': 'Победа Света',
+  'matchHeader.winnerDire': 'Победа Тьмы',
   'matchHeader.winnerUnknown': 'Победитель не подтверждён',
   'matchHeader.score': 'Счёт',
   'matchHeader.scoreUnavailable': 'Счёт недоступен: данных участников недостаточно.',
@@ -374,22 +376,24 @@ export const ru = {
   'matchHeader.ageDays': '{days} дн. назад',
   'matchHeader.source': 'Источник',
   'matchHeader.sourceValue': 'OpenDota',
-  'matchHeader.radiantShort': 'Radiant',
-  'matchHeader.direShort': 'Dire',
+  'matchHeader.radiantShort': 'Свет',
+  'matchHeader.direShort': 'Тьма',
 
   // --- Обзор команд (Task 15) ---
-  'team.radiantTitle': 'Radiant',
-  'team.direTitle': 'Dire',
+  'team.radiantTitle': 'Свет',
+  'team.direTitle': 'Тьма',
   'team.tableLabel': 'Обзор команды {team}',
   'team.columnHero': 'Герой',
   'team.columnPlayer': 'Игрок',
   'team.columnLevel': 'Ур.',
   'team.columnKda': 'У / С / П',
-  'team.columnLastHits': 'Добивания',
-  'team.columnDenies': 'Денаи',
-  'team.columnNetWorth': 'Чистая стоимость',
+  'team.columnLastHits': 'Ластхиты',
+  'team.columnDenies': 'Добивания',
+  'team.columnNetWorth': 'Общая ценность',
   'team.columnGpm': 'ЗПМ',
   'team.columnXpm': 'ОПМ',
+  'team.columnGpmHint': 'Золото в минуту',
+  'team.columnXpmHint': 'Опыт в минуту',
   'team.columnHeroDamage': 'Урон героям',
   'team.columnTowerDamage': 'Урон зданиям',
   'team.columnHealing': 'Лечение',
@@ -510,17 +514,14 @@ export const ru = {
   'history.status.error': 'Ошибка расчёта',
   'history.openReport': 'Открыть отчёт',
   'history.openUnavailable': 'Открытие недоступно: {status}.',
-  'history.result.radiant': 'Победа Radiant',
-  'history.result.dire': 'Победа Dire',
+  'history.result.radiant': 'Победа Света',
+  'history.result.dire': 'Победа Тьмы',
   'history.showMore': 'Показать ещё',
   'history.loadingMore': 'Загружаем…',
   'history.incomplete':
     'Показаны последние {count} отчётов. Более ранние можно догрузить — список не является полным.',
 
   // --- Прочие страницы ---
-  'heroes.title': 'Персонажи',
-  'heroes.description':
-    'Каталог героев, винрейты, пики, предметы и средние показатели появятся позже — после подтверждения источника данных и методики расчёта. Сейчас это дизайн-заготовка раздела.',
   'placeholder.badge': 'Функция в разработке',
   'notFound.title': 'Страница не найдена',
   'notFound.text':
@@ -673,7 +674,172 @@ export const ru = {
   'insights.kills.recommendation':
     'Сравнивай с задачей роли: у поддержки меньше добиваний и убийств — это не ошибка.',
 
+  // --- Task 19: каталог героев, профили, статистика, матчапы ---
+  'heroes.title': 'Герои',
+  'heroes.description':
+    'Полный каталог героев Dota 2: поиск, фильтр по основному атрибуту и профили с проверенными характеристиками.',
+  'heroes.search.label': 'Поиск героя',
+  'heroes.search.placeholder': 'Например, Phantom или Assassin',
+  'heroes.search.clear': 'Очистить поиск',
+  'heroes.filter.legend': 'Основной атрибут',
+  'heroes.filter.any': 'Все',
+  'heroes.filter.str': 'Сила',
+  'heroes.filter.agi': 'Ловкость',
+  'heroes.filter.int': 'Интеллект',
+  'heroes.filter.universal': 'Универсальный',
+  'heroes.sort.label': 'Сортировка',
+  'heroes.sort.name': 'По названию',
+  'heroes.sort.winRate': 'По винрейту',
+  'heroes.sort.pickRate': 'По доле выборов',
+  'heroes.count': 'Найдено героев: {count} из {total}.',
+  'heroes.empty': 'Ни один герой не подходит под запрос и фильтр.',
+  'heroes.emptyHint': 'Измените запрос или выберите другой атрибут.',
+  'heroes.loading': 'Загружаем статистику героев…',
+  'heroes.statsUnavailable':
+    'Статистика матчей недоступна: справочник героев показан полностью, винрейт и доля выборов скрыты.',
+  'heroes.card.open': 'Открыть профиль героя',
+  'heroes.card.winRate': 'винрейт',
+  'heroes.card.pickRate': 'доля выборов',
+  'heroes.imageFallback': 'нет портрета',
+  'heroes.attr.str': 'Сила',
+  'heroes.attr.agi': 'Ловкость',
+  'heroes.attr.int': 'Интеллект',
+  'heroes.attr.all': 'Универсальный',
+  'heroes.attack.Melee': 'Ближний бой',
+  'heroes.attack.Ranged': 'Дальний бой',
+
+  'hero.back': 'К каталогу героев',
+  'hero.notFound.title': 'Герой не найден',
+  'hero.notFound.text': 'Такого героя нет в проверенном справочнике. Проверьте адрес страницы.',
+  'hero.errors.retry': 'Повторить загрузку',
+  'hero.section.attributes': 'Характеристики',
+  'hero.section.stats': 'Статистика матчей',
+  'hero.section.matchups': 'Матчапы',
+  'hero.section.abilities': 'Способности',
+  'hero.section.talents': 'Таланты',
+  'hero.section.facets': 'Фасеты',
+  'hero.section.items': 'Популярные предметы',
+  'hero.attributes.str': 'Сила',
+  'hero.attributes.agi': 'Ловкость',
+  'hero.attributes.int': 'Интеллект',
+  'hero.attributes.all': 'Универсальный',
+  'hero.attributes.base': 'база',
+  'hero.attributes.gain': 'рост',
+  'hero.attributes.damage': 'Урон',
+  'hero.attributes.attackRange': 'Дальность атаки',
+  'hero.attributes.attackType': 'Тип атаки',
+  'hero.attributes.attackRate': 'Интервал атаки',
+  'hero.attributes.baseAttackTime': 'Базовая атака',
+  'hero.attributes.attackPoint': 'Точка атаки',
+  'hero.attributes.projectileSpeed': 'Скорость снаряда',
+  'hero.attributes.moveSpeed': 'Скорость передвижения',
+  'hero.attributes.armor': 'Броня',
+  'hero.attributes.mr': 'Сопротивление магии',
+  'hero.attributes.health': 'Здоровье',
+  'hero.attributes.mana': 'Мана',
+  'hero.attributes.legs': 'Ног',
+  'hero.attributes.vision': 'Обзор',
+  'hero.attributes.roles': 'Роли',
+  'hero.attributes.snapshot':
+    'Снимок справочника OpenDota от {date}. Это эталонные характеристики героя, а не статистика матчей; патч провайдером не указывается.',
+  'hero.attributes.unavailable': 'Характеристики недоступны в справочнике.',
+
+  'hero.stats.pub': 'Публичные матчи',
+  'hero.stats.turbo': 'Turbo',
+  'hero.stats.pro': 'Профессиональные',
+  'hero.stats.pickShare': 'Доля выборов героя',
+  'hero.stats.games': 'Выборов: {count}',
+  'hero.stats.wins': 'Побед: {count}',
+  'hero.stats.bans': 'Банов: {count}',
+  'hero.stats.bansMissing': 'Баны: провайдер значение не сообщил',
+  'hero.stats.pickShareNote':
+    'Доля выборов = pub_pick героя / сумма pub_pick всех героев в выборке провайдера: это доля среди записанных выборов героев, а не доля матчей с этим героем.',
+  'hero.stats.winRate': 'Винрейт: {value}',
+  'hero.stats.noPatch':
+    'Провайдер не сообщает ни патч, ни период наблюдений: это статистика выборки OpenDota, а не мета текущего патча.',
+  'hero.stats.retrievedAt': 'Данные получены: {time} (момент запроса, не период наблюдений).',
+  'hero.stats.unavailable':
+    'Статистика матчей недоступна: сервис не ответил. Характеристики и способности показаны из справочника.',
+  'hero.stats.empty': 'Для этого героя статистика в выборке провайдера отсутствует.',
+  'hero.stats.ranks': 'Ранговые брекеты',
+  'hero.stats.rankLabel': 'Брекет {rank}',
+
+  'hero.matchups.strongest': 'Пять наиболее успешных матчапов',
+  'hero.matchups.weakest': 'Пять наименее успешных матчапов',
+  'hero.matchups.lead':
+    'Винрейт выбранного героя против соперника. Это наблюдение, а не «контрпик»: причинность по этим данным не определяется.',
+  'hero.matchups.minGames': 'В рейтинг входят пары не менее {count} матчей.',
+  'hero.matchups.games': 'Матчей: {count}',
+  'hero.matchups.wins': 'Побед: {count}',
+  'hero.matchups.winRate': 'Винрейт {value}',
+  'hero.matchups.loading': 'Загружаем матчапы…',
+  'hero.matchups.error':
+    'Матчапы недоступны: провайдер не ответил. Остальные разделы профиля работают.',
+  'hero.matchups.empty': 'В ответе провайдера нет матчапов для этого героя.',
+  'hero.matchups.insufficient':
+    'После порога {count} матчей не осталось пар: ранжирование не строится, чтобы не выдавать шум за результат.',
+  'hero.matchups.limited':
+    'Подходящих пар меньше десяти: группы не пересекаются, поэтому одна из них короче пяти.',
+  'hero.matchups.source':
+    'Источник: OpenDota /heroes/{hero}/matchups. Провайдер не указывает патч, бракет, режим и период наблюдений.',
+  'hero.matchups.open': 'Открыть профиль соперника',
+  'hero.matchups.noSample': 'нет пар с достаточной выборкой',
+
+  'hero.abilities.loading': 'Загружаем способности…',
+  'hero.abilities.error':
+    'Справочник способностей недоступен: провайдер не ответил. Ничего не подставляется.',
+  'hero.abilities.empty': 'Провайдер не вернул способности для этого героя.',
+  'hero.abilities.type': 'Тип',
+  'hero.abilities.damage': 'Урон',
+  'hero.abilities.target': 'Цель',
+  'hero.abilities.immune': 'Сквозь иммунитет',
+  'hero.abilities.dispellable': 'Рассеивается',
+  'hero.abilities.noDescription': 'Описание недоступно в источнике.',
+  'hero.abilities.descriptionFallback':
+    'Русский перевод описания пока отсутствует — показан текст источника.',
+  'hero.abilities.missingDescriptions':
+    'У части способностей ({count}) провайдер не отдал описание — это состояние источника, а не ошибка расчёта.',
+  'hero.abilities.values': 'Значения',
+  'hero.abilities.innate': 'Врождённая',
+  'hero.abilities.innateCount': 'Врождённых способностей в справочнике: {count}.',
+  'hero.abilities.standardTitle': 'Обычные способности',
+  'hero.abilities.innateTitle': 'Врождённые способности',
+  'hero.abilities.coverage':
+    'Способностей из справочника: {total}; с описанием: {described}; без описания: {missing}.',
+  'hero.abilities.additionalNote':
+    'Провайдер помечает только врождённые способности; отдельной пометки «дополнительная» он не отдаёт, поэтому субспособности и способности с нестандартными слотами показаны в группе обычных без придуманной категории.',
+  'hero.abilities.noDisplayName': 'техническое имя',
+  'hero.abilities.missingNames':
+    'У части способностей ({count}) провайдер не отдал отображаемое имя — показано техническое имя из справочника.',
+  'hero.abilities.descriptionLanguage':
+    'Описания способностей приводятся на языке источника (английский); перевод игровой механики не додумывается.',
+
+  'hero.talents.level': 'Уровень {level}',
+  'hero.talents.empty': 'Таланты в справочнике отсутствуют.',
+  'hero.talents.noName': 'название недоступно',
+
+  'hero.facets.empty': 'Активных фасетов в справочнике нет.',
+  'hero.facets.noDescription': 'Описание фасета недоступно в источнике.',
+  'hero.facets.missingDescriptions':
+    'У части активных фасетов ({count}) провайдер не отдал описание — это состояние источника.',
+  'hero.facets.deprecated':
+    'Устаревшие фасеты провайдера не показываются, чтобы не выдавать старые данные за текущие.',
+
+  'hero.items.phase.start': 'Стартовая закупка',
+  'hero.items.phase.early': 'Ранняя игра',
+  'hero.items.phase.mid': 'Средняя игра',
+  'hero.items.phase.late': 'Поздняя игра',
+  'hero.items.count': 'Вхождений: {count}',
+  'hero.items.note':
+    'Счётчики вхождений из выборки OpenDota: знаменатель провайдер не публикует, поэтому проценты не вычисляются, а популярность не означает оптимальность.',
+  'hero.items.loading': 'Загружаем популярные предметы…',
+  'hero.items.error': 'Популярные предметы недоступны: провайдер не ответил.',
+  'hero.items.empty': 'Провайдер не вернул популярные предметы для этого героя.',
+  'hero.openProfile': 'Профиль героя',
+  'team.openHeroProfile': 'Открыть профиль героя',
+
   // --- Task 18: тайминги покупок предметов ---
+
   'itemTimings.title': 'Анализ покупки предметов',
   'itemTimings.lead':
     'Таймлайн подтверждённых покупок выбранного игрока. Время — момент события из журнала OpenDota, а не момент завершения сборки предмета.',

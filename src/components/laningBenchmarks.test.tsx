@@ -146,4 +146,77 @@ describe('LaningBenchmarks — отображение', () => {
     const html = render('ru', { player: makePlayer(), patch: 60, snapshot: makeSnapshot() })
     expect(html).toContain('медиана (малая выборка)')
   })
+
+/**
+ * Регрессия мобильного переполнения (2026-11-09).
+ *
+ * Таблица нормативов задаёт минимальную ширину около 483 px из-за `white-space: nowrap`,
+ * поэтому без контейнера прокрутки документ переполнялся по горизонтали на ~390 px.
+ * Проверяется, что таблица обёрнута в тот же `.table-scroll`, что и остальные таблицы
+ * отчёта, что колонки и значения не изменились и что обёртка не скрывает данные.
+ */
+describe('LaningBenchmarks — контейнер горизонтальной прокрутки', () => {
+  function countOf(html: string, needle: string): number {
+    return html.split(needle).length - 1
+  }
+
+  it('таблица обёрнута в .table-scroll перед собой', () => {
+    const html = render('ru', { player: makePlayer(), patch: 60, snapshot: makeSnapshot() })
+    expect(html).toContain('<div class="table-scroll"><table class="bench-table">')
+    expect(html).toContain('</table></div>')
+    // Ровно один контейнер прокрутки на секцию: без вложенных дублей.
+    expect(countOf(html, 'class="table-scroll"')).toBe(1)
+    expect(countOf(html, 'class="bench-table"')).toBe(1)
+  })
+
+  it('все шесть колонок нормативов сохранены', () => {
+    const html = render('ru', { player: makePlayer(), patch: 60, snapshot: makeSnapshot() })
+    expect(countOf(html, 'scope="col"')).toBe(6)
+    for (const label of ['Показатель', 'Факт', 'Медиана', 'p25–p75', 'Разница', 'Выборка']) {
+      expect(html).toContain(label)
+    }
+    // Строки метрик остались на месте (три ключа BENCHMARK_METRICS).
+    expect(countOf(html, 'data-metric=')).toBe(3)
+  })
+
+  it('значения нормативов не изменились обёрткой', () => {
+    const html = render('ru', { player: makePlayer(), patch: 60, snapshot: makeSnapshot() })
+    expect(html).toContain('110') // медиана LH
+    expect(html).toContain('90') // p25
+    expect(html).toContain('130') // p75
+    expect(html).toContain('400') // размер выборки
+  })
+
+  it('обёртка не скрывает таблицу от пользователя и от скринридера', () => {
+    const html = render('ru', { player: makePlayer(), patch: 60, snapshot: makeSnapshot() })
+    // Контейнер прокрутки не должен быть скрыт, отключён от AT или обрезан без прокрутки.
+    expect(html).not.toContain('aria-hidden="true"><table class="bench-table"')
+    expect(html).not.toMatch(/class="table-scroll"[^>]*style=/)
+    expect(html).not.toMatch(/class="table-scroll"[^>]*hidden/)
+    // Семантика таблицы сохранена.
+    expect(html).toContain('<thead>')
+    expect(html).toContain('<tbody>')
+    expect(countOf(html, 'scope="row"')).toBe(3)
+  })
+
+  it('английская версия тоже использует контейнер прокрутки', () => {
+    const html = render('en', { player: makePlayer(), patch: 60, snapshot: makeSnapshot() })
+    expect(html).toContain('<div class="table-scroll"><table class="bench-table">')
+    expect(html).not.toMatch(CYRILLIC)
+  })
+
+  it('без нормативов контейнер прокрутки не создаётся', () => {
+    const html = render('ru', { player: makePlayer(), patch: 60, snapshot: null })
+    expect(html).not.toContain('class="table-scroll"')
+    expect(html).not.toContain('class="bench-table"')
+    expect(html).toContain('Нормативы недоступны')
+  })
+
+  it('при чужом патче таблица не рендерится и обёртки нет', () => {
+    const html = render('ru', { player: makePlayer(), patch: 59, snapshot: makeSnapshot() })
+    expect(html).not.toContain('class="table-scroll"')
+    expect(html).toContain('другому патчу')
+  })
+})
+
 })

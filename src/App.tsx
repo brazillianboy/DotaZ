@@ -4,6 +4,7 @@ import AppLayout from './components/AppLayout'
 import ProtectedRoute from './components/ProtectedRoute'
 import AuthConfirmPage from './pages/AuthConfirmPage'
 import HistoryPage from './pages/HistoryPage'
+import HeroPage from './pages/HeroPage'
 import HeroesPage from './pages/HeroesPage'
 import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="register" element={<RegisterPage />} />
         <Route path="auth/confirm" element={<AuthConfirmPage />} />
         <Route path="heroes" element={<HeroesPage />} />
+        <Route path="heroes/:heroId" element={<HeroPage />} />
         <Route path="matches/:matchId" element={<MatchPage />} />
         <Route
           path="history"

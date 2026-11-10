@@ -221,6 +221,8 @@ export const en: Record<TranslationKey, string> = {
   'match.stats.gpm': 'GPM',
   'match.stats.xpm': 'XPM',
   'match.stats.lastHits': 'Last hits',
+  'match.stats.gpmHint': 'Gold per minute',
+  'match.stats.xpmHint': 'Experience per minute',
   'match.stats.hint':
     'Values are shown exactly as returned by OpenDota. "No data" means the field is missing from the response and is never replaced with zero. Last hits is a whole-match metric, not the first 10 minutes. The laning report and observations are shown below.',
 
@@ -375,6 +377,8 @@ export const en: Record<TranslationKey, string> = {
   'team.columnNetWorth': 'Net worth',
   'team.columnGpm': 'GPM',
   'team.columnXpm': 'XPM',
+  'team.columnGpmHint': 'Gold per minute',
+  'team.columnXpmHint': 'Experience per minute',
   'team.columnHeroDamage': 'Hero damage',
   'team.columnTowerDamage': 'Building damage',
   'team.columnHealing': 'Healing',
@@ -502,9 +506,6 @@ export const en: Record<TranslationKey, string> = {
     'Showing the latest {count} reports. Older ones can be loaded — the list is not complete.',
 
   // --- Прочие страницы ---
-  'heroes.title': 'Heroes',
-  'heroes.description':
-    'The hero catalogue, win rates, picks, items and average metrics will appear later — after the data source and calculation methodology are confirmed. For now this is a design placeholder.',
   'placeholder.badge': 'Feature in development',
   'notFound.title': 'Page not found',
   'notFound.text':
@@ -655,7 +656,170 @@ export const en: Record<TranslationKey, string> = {
   'insights.kills.recommendation':
     'Compare with the role task: fewer last hits and kills for a support is not a mistake.',
 
+  // --- Task 19: hero catalog, profiles, statistics, matchups ---
+  'heroes.title': 'Heroes',
+  'heroes.description':
+    'Full Dota 2 hero catalog: search, primary-attribute filter and profiles with verified characteristics.',
+  'heroes.search.label': 'Search hero',
+  'heroes.search.placeholder': 'For example, Phantom or Assassin',
+  'heroes.search.clear': 'Clear search',
+  'heroes.filter.legend': 'Primary attribute',
+  'heroes.filter.any': 'All',
+  'heroes.filter.str': 'Strength',
+  'heroes.filter.agi': 'Agility',
+  'heroes.filter.int': 'Intelligence',
+  'heroes.filter.universal': 'Universal',
+  'heroes.sort.label': 'Sorting',
+  'heroes.sort.name': 'By name',
+  'heroes.sort.winRate': 'By win rate',
+  'heroes.sort.pickRate': 'By pick share',
+  'heroes.count': 'Heroes found: {count} of {total}.',
+  'heroes.empty': 'No hero matches the query and filter.',
+  'heroes.emptyHint': 'Change the query or pick another attribute.',
+  'heroes.loading': 'Loading hero statistics…',
+  'heroes.statsUnavailable':
+    'Match statistics are unavailable: the full hero catalog is shown, win rate and pick share are hidden.',
+  'heroes.card.open': 'Open hero profile',
+  'heroes.card.winRate': 'win rate',
+  'heroes.card.pickRate': 'pick share',
+  'heroes.imageFallback': 'no portrait',
+  'heroes.attr.str': 'Strength',
+  'heroes.attr.agi': 'Agility',
+  'heroes.attr.int': 'Intelligence',
+  'heroes.attr.all': 'Universal',
+  'heroes.attack.Melee': 'Melee',
+  'heroes.attack.Ranged': 'Ranged',
+
+  'hero.back': 'Back to hero catalog',
+  'hero.notFound.title': 'Hero not found',
+  'hero.notFound.text': 'This hero is not in the verified catalog. Check the page address.',
+  'hero.errors.retry': 'Retry loading',
+  'hero.section.attributes': 'Characteristics',
+  'hero.section.stats': 'Match statistics',
+  'hero.section.matchups': 'Matchups',
+  'hero.section.abilities': 'Abilities',
+  'hero.section.talents': 'Talents',
+  'hero.section.facets': 'Facets',
+  'hero.section.items': 'Popular items',
+  'hero.attributes.str': 'Strength',
+  'hero.attributes.agi': 'Agility',
+  'hero.attributes.int': 'Intelligence',
+  'hero.attributes.all': 'Universal',
+  'hero.attributes.base': 'base',
+  'hero.attributes.gain': 'gain',
+  'hero.attributes.damage': 'Damage',
+  'hero.attributes.attackRange': 'Attack range',
+  'hero.attributes.attackType': 'Attack type',
+  'hero.attributes.attackRate': 'Attack rate',
+  'hero.attributes.baseAttackTime': 'Base attack time',
+  'hero.attributes.attackPoint': 'Attack point',
+  'hero.attributes.projectileSpeed': 'Projectile speed',
+  'hero.attributes.moveSpeed': 'Movement speed',
+  'hero.attributes.armor': 'Armor',
+  'hero.attributes.mr': 'Magic resistance',
+  'hero.attributes.health': 'Health',
+  'hero.attributes.mana': 'Mana',
+  'hero.attributes.legs': 'Legs',
+  'hero.attributes.vision': 'Vision',
+  'hero.attributes.roles': 'Roles',
+  'hero.attributes.snapshot':
+    'OpenDota catalog snapshot dated {date}. These are reference hero characteristics, not match statistics; the provider does not report a patch.',
+  'hero.attributes.unavailable': 'Characteristics are unavailable in the catalog.',
+
+  'hero.stats.pub': 'Public matches',
+  'hero.stats.turbo': 'Turbo',
+  'hero.stats.pro': 'Professional',
+  'hero.stats.pickShare': 'Hero pick share',
+  'hero.stats.games': 'Picks: {count}',
+  'hero.stats.wins': 'Wins: {count}',
+  'hero.stats.bans': 'Bans: {count}',
+  'hero.stats.bansMissing': 'Bans: value not reported by the provider',
+  'hero.stats.pickShareNote':
+    'Pick share = hero pub_pick / sum of pub_pick across all heroes in the provider sample: a share of recorded hero picks, not the share of matches featuring this hero.',
+  'hero.stats.winRate': 'Win rate: {value}',
+  'hero.stats.noPatch':
+    'The provider reports neither patch nor observation period: this is OpenDota sample statistics, not current-patch meta.',
+  'hero.stats.retrievedAt': 'Data retrieved: {time} (request time, not the observation period).',
+  'hero.stats.unavailable':
+    'Match statistics are unavailable: the service did not respond. Characteristics and abilities are shown from the catalog.',
+  'hero.stats.empty': 'This hero has no statistics in the provider sample.',
+  'hero.stats.ranks': 'Rank brackets',
+  'hero.stats.rankLabel': 'Bracket {rank}',
+
+  'hero.matchups.strongest': 'Five most successful matchups',
+  'hero.matchups.weakest': 'Five least successful matchups',
+  'hero.matchups.lead':
+    'Win rate of the selected hero against an opponent. This is an observation, not a counterpick: causality is not determined by these data.',
+  'hero.matchups.minGames': 'Only pairs with at least {count} matches are ranked.',
+  'hero.matchups.games': 'Matches: {count}',
+  'hero.matchups.wins': 'Wins: {count}',
+  'hero.matchups.winRate': 'Win rate {value}',
+  'hero.matchups.loading': 'Loading matchups…',
+  'hero.matchups.error': 'Matchups are unavailable: the provider did not respond.',
+  'hero.matchups.empty': 'The provider response contains no matchups for this hero.',
+  'hero.matchups.insufficient':
+    'No pair passes the {count}-match threshold: no ranking is built, so noise is not presented as a result.',
+  'hero.matchups.limited':
+    'Fewer than ten qualifying pairs: the groups never overlap, so one of them is shorter than five.',
+  'hero.matchups.source':
+    'Source: OpenDota /heroes/{hero}/matchups. The provider specifies neither patch, bracket, game mode nor observation period.',
+  'hero.matchups.open': 'Open opponent profile',
+  'hero.matchups.noSample': 'no pairs with a sufficient sample',
+
+  'hero.abilities.loading': 'Loading abilities…',
+  'hero.abilities.error': 'The ability catalog is unavailable: the provider did not respond.',
+  'hero.abilities.empty': 'The provider returned no abilities for this hero.',
+  'hero.abilities.type': 'Type',
+  'hero.abilities.damage': 'Damage',
+  'hero.abilities.target': 'Target',
+  'hero.abilities.immune': 'Pierces immunity',
+  'hero.abilities.dispellable': 'Dispellable',
+  'hero.abilities.noDescription': 'Description is unavailable in the source.',
+  'hero.abilities.descriptionFallback':
+    'A Russian translation of this description is not available yet — the source text is shown.',
+  'hero.abilities.missingDescriptions':
+    'For some abilities ({count}) the provider returned no description — a source state, not a calculation error.',
+  'hero.abilities.values': 'Values',
+  'hero.abilities.innate': 'Innate',
+  'hero.abilities.innateCount': 'Innate abilities in the catalog: {count}.',
+  'hero.abilities.standardTitle': 'Standard abilities',
+  'hero.abilities.innateTitle': 'Innate abilities',
+  'hero.abilities.coverage':
+    'Abilities in the catalog: {total}; with a description: {described}; without a description: {missing}.',
+  'hero.abilities.additionalNote':
+    'The provider only flags innate abilities; it does not mark "additional" ones, so sub-abilities and abilities in non-standard slots stay in the standard group without an invented category.',
+  'hero.abilities.noDisplayName': 'technical name',
+  'hero.abilities.missingNames':
+    'For some abilities ({count}) the provider returned no display name — the technical catalog name is shown.',
+  'hero.abilities.descriptionLanguage':
+    'Ability descriptions are shown in the source language (English); game mechanics are never translated by guesswork.',
+
+  'hero.talents.level': 'Level {level}',
+  'hero.talents.empty': 'The catalog contains no talents.',
+  'hero.talents.noName': 'name unavailable',
+
+  'hero.facets.empty': 'The catalog contains no active facets.',
+  'hero.facets.noDescription': 'The facet description is unavailable in the source.',
+  'hero.facets.missingDescriptions':
+    'For some active facets ({count}) the provider returned no description — a source state.',
+  'hero.facets.deprecated':
+    'Deprecated provider facets are hidden so stale data is not presented as current.',
+
+  'hero.items.phase.start': 'Starting items',
+  'hero.items.phase.early': 'Early game',
+  'hero.items.phase.mid': 'Mid game',
+  'hero.items.phase.late': 'Late game',
+  'hero.items.count': 'Occurrences: {count}',
+  'hero.items.note':
+    'Occurrence counters from the OpenDota sample: the provider publishes no denominator, so no percentages are computed and popularity does not mean optimality.',
+  'hero.items.loading': 'Loading popular items…',
+  'hero.items.error': 'Popular items are unavailable: the provider did not respond.',
+  'hero.items.empty': 'The provider returned no popular items for this hero.',
+  'hero.openProfile': 'Hero profile',
+  'team.openHeroProfile': 'Open hero profile',
+
   // --- Task 18: item purchase timings ---
+
   'itemTimings.title': 'Item Purchase Timing Analysis',
   'itemTimings.lead':
     'Timeline of the selected player`s confirmed purchases. The time is the OpenDota purchase event, not the moment the item was assembled.',

@@ -140,34 +140,44 @@ export default function LaningBenchmarks({ player, patch, snapshot }: LaningBenc
         </p>
       ) : (
         <>
-          <table className="bench-table">
-            <thead>
-              <tr>
-                <th scope="col">{t('bench.column.metric')}</th>
-                <th scope="col">{t('bench.column.actual')}</th>
-                <th scope="col">{t('bench.column.median')}</th>
-                <th scope="col">{t('bench.column.range')}</th>
-                <th scope="col">{t('bench.column.diff')}</th>
-                <th scope="col">{t('bench.column.sample')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {BENCHMARK_METRICS.map((key) => {
-                const comparison = result.metrics?.[key]
-                if (comparison === undefined) return null
-                return (
-                  <tr key={key} data-metric={key} data-status={comparison.status}>
-                    <th scope="row">{metricLabel(key)}</th>
-                    <td>{metricCell(comparison, 'actual')}</td>
-                    <td>{metricCell(comparison, 'median')}</td>
-                    <td>{metricCell(comparison, 'range')}</td>
-                    <td>{metricCell(comparison, 'diff')}</td>
-                    <td>{metricCell(comparison, 'sample')}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          {/*
+           * Таблица нормативов обёрнута в `.table-scroll` — тот же контейнер
+           * горизонтальной прокрутки, что используют `team-table` и `buildings-table`.
+           * Без обёртки шесть колонок с `white-space: nowrap` задают таблице
+           * минимальную ширину около 483 px, и документ переполнялся по горизонтали
+           * на узких экранах (~390 px). Колонки, значения, шрифт и расчёты Task 16
+           * не менялись: прокручивается только сама таблица внутри панели.
+           */}
+          <div className="table-scroll">
+            <table className="bench-table">
+              <thead>
+                <tr>
+                  <th scope="col">{t('bench.column.metric')}</th>
+                  <th scope="col">{t('bench.column.actual')}</th>
+                  <th scope="col">{t('bench.column.median')}</th>
+                  <th scope="col">{t('bench.column.range')}</th>
+                  <th scope="col">{t('bench.column.diff')}</th>
+                  <th scope="col">{t('bench.column.sample')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {BENCHMARK_METRICS.map((key) => {
+                  const comparison = result.metrics?.[key]
+                  if (comparison === undefined) return null
+                  return (
+                    <tr key={key} data-metric={key} data-status={comparison.status}>
+                      <th scope="row">{metricLabel(key)}</th>
+                      <td>{metricCell(comparison, 'actual')}</td>
+                      <td>{metricCell(comparison, 'median')}</td>
+                      <td>{metricCell(comparison, 'range')}</td>
+                      <td>{metricCell(comparison, 'diff')}</td>
+                      <td>{metricCell(comparison, 'sample')}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
 
           <p className="stub__hint">
             {t('bench.meta', {

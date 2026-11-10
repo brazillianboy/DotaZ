@@ -2118,3 +2118,724 @@
     font-size: 0.65rem;
   }
 }
+
+/* --- Task 19: каталог героев и профиль героя --- */
+
+.hero-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 12px;
+}
+
+.hero-filters__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.hero-filters__label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.hero-filters__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hero-filters__search {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+}
+
+.chip[data-active='true'] {
+  font-weight: 600;
+  border-color: currentColor;
+}
+
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr));
+  gap: 12px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.hero-card {
+  min-width: 0;
+}
+
+.hero-card__link {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  height: 100%;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  text-decoration: none;
+  color: inherit;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+
+.hero-card__link:hover,
+.hero-card__link:focus-visible {
+  border-color: rgba(255, 255, 255, 0.35);
+  transform: translateY(-1px);
+}
+
+.hero-card__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.hero-card__portrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.hero-card__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.7rem;
+  opacity: 0.7;
+  text-align: center;
+}
+
+.hero-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hero-card__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.hero-card__attr {
+  font-size: 0.75rem;
+  opacity: 0.75;
+}
+
+.hero-card__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.hero-card__stat {
+  white-space: nowrap;
+}
+
+.hero-card__open {
+  margin-top: auto;
+  font-size: 0.72rem;
+  opacity: 0.6;
+}
+
+.hero-profile__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 16px;
+}
+
+.hero-profile__portrait {
+  width: 160px;
+  max-width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: 10px;
+}
+
+.hero-profile__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 160px;
+  max-width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.06);
+  font-size: 0.75rem;
+  opacity: 0.7;
+}
+
+.hero-profile__meta {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+  flex: 1 1 200px;
+}
+
+.hero-profile__back {
+  font-size: 0.78rem;
+  opacity: 0.8;
+  width: fit-content;
+}
+
+.hero-profile__back:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.hero-profile__tag {
+  display: inline-block;
+  margin-right: 8px;
+  padding: 2px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.hero-profile__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+.hero-attr-blocks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.hero-attr-block {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.hero-attr-block__name {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.hero-attr-block__value {
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-attr-block__hint {
+  font-size: 0.72rem;
+  font-weight: 400;
+  opacity: 0.7;
+}
+
+.hero-attr-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
+  gap: 8px 14px;
+  margin: 0 0 10px;
+}
+
+.hero-attr-grid__item {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.hero-attr-grid__item dt {
+  font-size: 0.72rem;
+  opacity: 0.7;
+}
+
+.hero-attr-grid__item dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.hero-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 10px;
+}
+
+.hero-stats__item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  min-width: 0;
+  flex: 1 1 140px;
+}
+
+.hero-stats__item dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.75;
+}
+
+.hero-stats__item dd {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.85;
+}
+
+.hero-stats__winrate {
+  font-size: 1.05rem;
+  font-weight: 600;
+  opacity: 1;
+}
+
+.hero-matchups {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr));
+  gap: 14px;
+}
+
+.hero-matchups__group {
+  min-width: 0;
+}
+
+.hero-matchups__title {
+  font-size: 0.9rem;
+  margin: 0 0 8px;
+}
+
+.hero-matchups__list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-matchup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.hero-matchup__link {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.hero-matchup__link:hover .hero-matchup__name {
+  text-decoration: underline;
+}
+
+.hero-matchup__link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+.hero-matchup__portrait {
+  width: 40px;
+  height: 24px;
+  object-fit: cover;
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+
+.hero-matchup__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 24px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.55rem;
+  opacity: 0.7;
+  flex: 0 0 auto;
+}
+
+.hero-matchup__name {
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.hero-matchup__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  align-items: flex-end;
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.hero-matchup__winrate {
+  font-weight: 600;
+}
+
+.hero-matchup__games {
+  opacity: 0.7;
+}
+
+.hero-abilities {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-ability {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  min-width: 0;
+}
+
+.hero-ability__head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  min-width: 0;
+}
+
+.hero-ability__icon,
+.hero-ability__fallback {
+  width: 36px;
+  height: 36px;
+  border-radius: 6px;
+  flex: 0 0 auto;
+  object-fit: cover;
+}
+
+.hero-ability__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.08);
+  font-size: 0.62rem;
+  opacity: 0.75;
+}
+
+.hero-ability__title {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+}
+
+.hero-ability__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.hero-ability__chip {
+  padding: 1px 6px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  font-size: 0.66rem;
+  opacity: 0.8;
+  /* Длинные чипы («Тип: По области, Модификатор атаки») переносятся, а не вылезают за карточку. */
+  white-space: normal;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.hero-abilities__group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.hero-ability__chip--muted {
+  opacity: 0.55;
+  font-style: italic;
+}
+
+.hero-ability__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-size: 0.7rem;
+  opacity: 0.75;
+  min-width: 0;
+  max-width: 100%;
+}
+
+/* Длинные описания (в том числе длинные слова и служебные идентификаторы)
+   переносятся, а не выходят за пределы карточки. Обрезки и overflow: hidden нет. */
+.hero-ability__description {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  hyphens: auto;
+  max-width: 100%;
+}
+
+/* Подпись «перевод пока отсутствует»: отдельная строка, не влияет на размеры карточки. */
+.hero-ability__note {
+  margin: 0;
+  font-size: 0.7rem;
+  line-height: 1.4;
+  opacity: 0.7;
+  font-style: italic;
+  overflow-wrap: anywhere;
+}
+
+.hero-ability__values {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  margin: 0;
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.hero-ability__value {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  /* Значение свойства может быть длинной формулой — переносим, а не обрезаем. */
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.hero-ability__value dt,
+.hero-ability__value dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.hero-subsection__title {
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+  margin: 14px 0 6px;
+}
+
+.hero-talents {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+  gap: 6px 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-talent {
+  display: flex;
+  gap: 6px;
+  align-items: baseline;
+  min-width: 0;
+  font-size: 0.78rem;
+}
+
+.hero-talent__level {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+.hero-talent__name {
+  overflow-wrap: anywhere;
+}
+
+.hero-facets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-facet {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+.hero-facet__title {
+  font-weight: 600;
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}
+
+.hero-facet__description {
+  margin: 0;
+  font-size: 0.76rem;
+  line-height: 1.4;
+  opacity: 0.85;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.hero-items {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.hero-items__phase {
+  min-width: 0;
+}
+
+.hero-items__title {
+  font-size: 0.8rem;
+  margin: 0 0 6px;
+  opacity: 0.85;
+}
+
+.hero-items__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.hero-item {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-width: 0;
+  padding: 4px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  font-size: 0.76rem;
+}
+
+.hero-item__icon {
+  width: 24px;
+  height: 18px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+.hero-item__name {
+  overflow-wrap: anywhere;
+}
+
+.hero-item__count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.7;
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 560px) {
+  .hero-profile__portrait,
+  .hero-profile__fallback {
+    width: 100%;
+  }
+
+  .hero-filters {
+    gap: 10px;
+  }
+
+  .hero-matchup__stats {
+    align-items: flex-start;
+    text-align: left;
+  }
+}
+
+
+/* --- Task 19: ссылки на профиль героя со страницы матча --- */
+
+.team-table__profile,
+.match-stats__profile {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  opacity: 0.75;
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  white-space: nowrap;
+}
+
+.team-table__profile:hover,
+.match-stats__profile:hover {
+  opacity: 1;
+}
+
+.team-table__profile:focus-visible,
+.match-stats__profile:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+@media (max-width: 560px) {
+  .team-table__profile {
+    display: block;
+    margin-top: 2px;
+    white-space: normal;
+  }
+}

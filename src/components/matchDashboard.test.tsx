@@ -1,5 +1,6 @@
 import { renderToStaticMarkup } from 'react-dom/server'
 import type { ReactElement } from 'react'
+import { StaticRouter } from 'react-router-dom'
 import { describe, expect, it } from 'vitest'
 
 import { I18nProvider } from '../i18n/I18nContext'
@@ -71,8 +72,18 @@ const RAW_MATCH: Record<string, unknown> = {
   ],
 }
 
+/*
+ * Обёртка рендера: `I18nProvider` даёт локализацию, `StaticRouter` — контекст
+ * маршрутизации. Он нужен потому, что `PlayerStats` и `TeamOverview` содержат
+ * ссылки на профили героев (Task 19). Никаких утверждений это не ослабляет:
+ * проверяемые значения по-прежнему берутся из разметки.
+ */
 function render(node: ReactElement, locale: Locale = 'ru'): string {
-  return renderToStaticMarkup(<I18nProvider initialLocale={locale}>{node}</I18nProvider>)
+  return renderToStaticMarkup(
+    <I18nProvider initialLocale={locale}>
+      <StaticRouter location="/matches/9007760151">{node}</StaticRouter>
+    </I18nProvider>,
+  )
 }
 
 describe('MatchHeader — шапка матча', () => {
@@ -80,7 +91,7 @@ describe('MatchHeader — шапка матча', () => {
     const match = normalizeMatch(RAW_MATCH)
     const html = render(<MatchHeader match={match} requestedId="9007760151" />)
 
-    expect(html).toContain('Победа Radiant')
+    expect(html).toContain('Победа Света')
     expect(html).toContain('56')
     expect(html).toContain('22')
     expect(html).toContain('34:29')
@@ -97,8 +108,8 @@ describe('MatchHeader — шапка матча', () => {
 
     expect(html).toContain('Победитель не подтверждён')
     expect(html).toContain('Счёт недоступен')
-    expect(html).not.toContain('Победа Radiant')
-    expect(html).not.toContain('Победа Dire')
+    expect(html).not.toContain('Победа Света')
+    expect(html).not.toContain('Победа Тьмы')
   })
 
   it('локализует шапку на английский язык', () => {
@@ -382,7 +393,7 @@ describe('BuildingsMap — карта зданий', () => {
     expect(html).toContain('data-map-side="dire"')
     // Маркеры — кнопки: доступны с клавиатуры и имеют полную подпись.
     expect(html).toContain('<button')
-    expect(html).toContain('aria-label="Dire · Башня T1 · верх · Разрушено · разрушено на 11:04"')
+    expect(html).toContain('aria-label="Тьма · Башня T1 · верх · Разрушено · разрушено на 11:04"')
   })
 
   it('держит маркеры внутри карты и различает состояния без выдуманного времени', () => {
@@ -411,7 +422,7 @@ describe('BuildingsMap — карта зданий', () => {
     expect(html).toContain('map-marker--dire')
     // Подтверждённое время разрушения показывается только там, где есть событие.
     expect(html).toContain('разрушено на 11:04')
-    expect(html).not.toContain('Radiant · Башня T1 · верх · Разрушено · разрушено на')
+    expect(html).not.toContain('Свет · Башня T1 · верх · Разрушено · разрушено на')
   })
 
   it('показывает легенду и короткую сводку, а подробную разбивку — в раскрываемом блоке', () => {

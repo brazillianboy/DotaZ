@@ -1,0 +1,33 @@
+{
+  "_meta": {
+    "purpose": "Русские названия способностей. Ключ — стабильный идентификатор OpenDota (внутреннее имя способности), а не отображаемое имя.",
+    "source": "Устоявшиеся русские названия способностей Dota 2; механика не переводится и не изменяется.",
+    "note": "Если ключа нет, показывается исходное английское название из источника. Придуманные названия не подставляются.",
+    "updatedAt": "2026-11-09"
+  },
+
+  "ancient_apparition_cold_feet": "Холодные ноги",
+  "ancient_apparition_ice_vortex": "Ледяной вихрь",
+  "ancient_apparition_chilling_touch": "Леденящее касание",
+  "ancient_apparition_bone_chill": "Стужа в костях",
+  "ancient_apparition_ice_blast": "Ледяной взрыв",
+  "ancient_apparition_ice_blast_release": "Освобождение",
+
+  "zuus_arc_lightning": "Дуговая молния",
+  "zuus_lightning_bolt": "Удар молнии",
+  "zuus_heavenly_jump": "Небесный прыжок",
+  "zuus_cloud": "Грозовая туча",
+  "zuus_lightning_hands": "Молниевые руки",
+  "zuus_thundergods_wrath": "Гнев Громовержца",
+  "zuus_static_field": "Статическое поле",
+
+  "rubick_telekinesis": "Телекинез",
+  "rubick_fade_bolt": "Угасающая молния",
+  "rubick_arcane_supremacy": "Тайное превосходство",
+  "rubick_empty1": "Украденное заклинание",
+  "rubick_empty2": "Украденное заклинание",
+  "rubick_spell_steal": "Кража заклинаний",
+  "rubick_telekinesis_land": "Место приземления",
+  "rubick_telekinesis_land_self": "Место приземления",
+  "rubick_curiosity": "Любопытство"
+}

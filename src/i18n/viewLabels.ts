@@ -42,13 +42,17 @@ export function kdaText(
   return `${kdaPart(kills)} / ${kdaPart(deaths)} / ${kdaPart(assists)}`
 }
 
-/** Название стороны игрока. */
+/**
+ * Название стороны игрока. Названия сторон локализуются (RU: «Свет» / «Тьма»),
+ * потому что это подписи интерфейса, а не идентификаторы данных: значение
+ * `player.team` остаётся `radiant` / `dire`.
+ */
 export function teamText(t: Translate, team: PlayerTeam | null): string {
   if (team === 'radiant') {
-    return 'Radiant'
+    return t('team.radiantTitle')
   }
   if (team === 'dire') {
-    return 'Dire'
+    return t('team.direTitle')
   }
   return t('match.players.unknownTeam')
 }
@@ -58,7 +62,7 @@ export function winnerText(t: Translate, radiantWin: boolean | null): string {
   if (radiantWin === null) {
     return t('common.noData')
   }
-  return radiantWin ? 'Radiant' : 'Dire'
+  return radiantWin ? t('team.radiantTitle') : t('team.direTitle')
 }
 
 /** Подпись участника: слот и (при наличии) подтверждённый `hero_id`. */

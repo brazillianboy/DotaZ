@@ -1,4 +1,6 @@
-import { heroImageUrl, heroName } from '../lib/heroes'
+import { Link } from 'react-router-dom'
+
+import { heroImageUrl, heroName, isKnownHero } from '../lib/heroes'
 import type { NormalizedPlayer } from '../types/match'
 import { useI18n } from '../i18n/I18nContext'
 import { kdaText, statText, teamText } from '../i18n/viewLabels'
@@ -8,10 +10,12 @@ interface PlayerStatsProps {
 }
 
 /** Метрика игрока: подпись и подтверждённое значение (или «нет данных»). */
-function Metric({ label, value }: { label: string; value: string }) {
+function Metric({ label, hint, value }: { label: string; hint?: string; value: string }) {
   return (
     <div className="metric-card">
-      <dt className="metric-card__label">{label}</dt>
+      <dt className="metric-card__label">
+        {hint === undefined ? label : <abbr title={hint}>{label}</abbr>}
+      </dt>
       <dd className="metric-card__value">{value}</dd>
     </div>
   )
@@ -63,6 +67,15 @@ export default function PlayerStats({ player }: PlayerStatsProps) {
             {heroLabel}
           </h2>
           <p className="match-stats__name">{playerName}</p>
+          {isKnownHero(player.hero_id) && (
+            <Link
+              className="match-stats__profile"
+              to={`/heroes/${player.hero_id}`}
+              aria-label={`${t('team.openHeroProfile')} · ${heroLabel}`}
+            >
+              {t('hero.openProfile')}
+            </Link>
+          )}
           <p className="match-stats__meta">
             {teamText(t, player.team)} · {t('match.stats.slot')} {player.player_slot}
             {player.level === null ? '' : ` · ${t('abilities.level', { level: player.level })}`}
@@ -75,8 +88,16 @@ export default function PlayerStats({ player }: PlayerStatsProps) {
         <Metric label={t('team.columnLastHits')} value={statText(t, player.last_hits)} />
         <Metric label={t('team.columnDenies')} value={statText(t, player.denies)} />
         <Metric label={t('team.columnNetWorth')} value={statText(t, player.net_worth)} />
-        <Metric label={t('team.columnGpm')} value={statText(t, player.gold_per_min)} />
-        <Metric label={t('team.columnXpm')} value={statText(t, player.xp_per_min)} />
+        <Metric
+          label={t('team.columnGpm')}
+          hint={t('match.stats.gpmHint')}
+          value={statText(t, player.gold_per_min)}
+        />
+        <Metric
+          label={t('team.columnXpm')}
+          hint={t('match.stats.xpmHint')}
+          value={statText(t, player.xp_per_min)}
+        />
         <Metric label={t('team.columnHeroDamage')} value={statText(t, player.hero_damage)} />
         <Metric label={t('team.columnTowerDamage')} value={statText(t, player.tower_damage)} />
         <Metric label={t('team.columnHealing')} value={statText(t, player.hero_healing)} />

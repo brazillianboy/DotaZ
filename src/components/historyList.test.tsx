@@ -53,7 +53,7 @@ describe('HistoryList — карточки сохранённых отчётов
     const html = renderList()
     expect(html).toContain('Матч 9007760151')
     expect(html).toContain('2026-10-21 09:30 UTC')
-    expect(html).toContain('Победа Radiant')
+    expect(html).toContain('Победа Света')
     expect(html).toContain('Полный отчёт')
     expect(html).toContain('Источник')
     expect(html).toContain('1.0.0')
@@ -87,14 +87,14 @@ describe('HistoryList — карточки сохранённых отчётов
   it('честно показывает отсутствие результата и даты', () => {
     const html = renderList({ items: [makeItem({ radiant_win: null, created_at: null })] })
     expect(html).toContain('Нет данных')
-    expect(html).not.toContain('Победа Radiant')
-    expect(html).not.toContain('Победа Dire')
+    expect(html).not.toContain('Победа Света')
+    expect(html).not.toContain('Победа Тьмы')
   })
 
   it('поддерживает результат победы Dire', () => {
     const html = renderList({ items: [makeItem({ radiant_win: false })] })
-    expect(html).toContain('Победа Dire')
-    expect(historyResultText(t, false)).toBe('Победа Dire')
+    expect(html).toContain('Победа Тьмы')
+    expect(historyResultText(t, false)).toBe('Победа Тьмы')
     expect(historyResultText(t, null)).toBe('Нет данных')
   })
 

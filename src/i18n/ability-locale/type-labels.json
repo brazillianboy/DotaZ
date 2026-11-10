@@ -1,0 +1,23 @@
+{
+  "_meta": {
+    "purpose": "Русские подписи для значений behavior / dmg_type / target_type / dispellable / bkbpierce из OpenDota constants/abilities.",
+    "source": "Термины интерфейса Dota 2; значения не изменяются, переводится только подпись.",
+    "note": "Ключ словаря — точное значение поля провайдера. Значение 'No' намеренно не переводится: в интерфейсе оно не показывается.",
+    "updatedAt": "2026-11-09"
+  },
+  "Attack Modifier": "Модификатор атаки",
+  "Hidden": "Скрытая",
+  "No Target": "Без цели",
+  "Passive": "Пассивная",
+  "Point Target": "По области",
+  "Unit Target": "По цели",
+  "Magical": "Магический",
+  "Physical": "Физический",
+  "Pure": "Чистый",
+  "Basic": "Базовый",
+  "Building": "Строение",
+  "Hero": "Герой",
+  "Tree": "Дерево",
+  "Strong Dispels Only": "Только сильные рассеивания",
+  "Yes": "Да"
+}

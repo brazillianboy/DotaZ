@@ -1,6 +1,7 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 
-import { heroImageUrl, heroName } from '../lib/heroes'
+import { heroImageUrl, heroName, isKnownHero } from '../lib/heroes'
 import { inventoryItems, sortInventoryChronologically, type InventoryItem } from '../lib/inventory'
 import { purchaseClockText } from '../lib/items'
 import { groupPlayers } from '../lib/matchView'
@@ -150,10 +151,10 @@ function TeamTable({ team, title, players, selectedSlot, onSelect }: TeamTablePr
                   {t('team.columnNetWorth')}
                 </th>
                 <th scope="col" className="team-table__head-num">
-                  {t('team.columnGpm')}
+                  <abbr title={t('team.columnGpmHint')}>{t('team.columnGpm')}</abbr>
                 </th>
                 <th scope="col" className="team-table__head-num">
-                  {t('team.columnXpm')}
+                  <abbr title={t('team.columnXpmHint')}>{t('team.columnXpm')}</abbr>
                 </th>
                 <th scope="col" className="team-table__head-num">
                   {t('team.columnHeroDamage')}
@@ -207,6 +208,16 @@ function TeamTable({ team, title, players, selectedSlot, onSelect }: TeamTablePr
                           {heroLabel}
                         </span>
                       </button>
+                      {isKnownHero(player.hero_id) && (
+                        <Link
+                          className="team-table__profile"
+                          to={`/heroes/${player.hero_id}`}
+                          aria-label={`${t('team.openHeroProfile')} · ${heroLabel}`}
+                          title={t('hero.openProfile')}
+                        >
+                          {t('hero.openProfile')}
+                        </Link>
+                      )}
                     </th>
                     <td className="team-table__cell team-table__cell--player" title={playerName}>
                       {playerName}
