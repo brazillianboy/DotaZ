@@ -2,7 +2,25 @@
   "_meta": {
     "purpose": "Русские названия активных фасетов. Ключ — стабильный идентификатор фасета.",
     "source": "Перевод названий активных фасетов из справочника.",
-    "note": "Устаревшие фасеты (deprecated = true/1) не отображаются вовсе, поэтому в словарь не входят. Отсутствие ключа — показывается английское название источника.",
-    "updatedAt": "2026-11-09"
-  }
+    "note": "Устаревшие фасеты (deprecated = true/1) не отображаются вовсе, поэтому в словарь не входят. В каталоге на 2026-11-10 активных фасетов 18 (из 339); переведены все 18.",
+    "updatedAt": "2026-11-10"
+  },
+  "night_stalker_blinding_void": "Слепящая пустота",
+  "night_stalker_dayswap": "Власть ночи",
+  "night_stalker_voidbringer": "Несущий пустоту",
+  "chen_wolf_convert": "Обращение волка",
+  "doom_bringer_boost_selling": "Сделка с дьяволом",
+  "brewmaster_roll_out_the_barrel": "Кати бочку",
+  "brewmaster_drunken_master": "Пьяный мастер",
+  "brewmaster_brewmaster": "Похмелье",
+  "oracle_facet_dmg": "Проклятие ясновидца",
+  "oracle_facet_heal": "Исцеление ясновидца",
+  "techies_atk_range": "Прицел Squee",
+  "techies_spleens_secret_sauce": "Секретный соус Spleen",
+  "techies_backpack": "Запас Spoon",
+  "winter_wyvern_heal_mana": "Суть синего сердца",
+  "winter_wyvern_atk_range": "Драконье зрение",
+  "winter_wyvern_winterproof": "Зимостойкость",
+  "winter_wyvern_recursive": "Рекурсия",
+  "abyssal_underlord_summons": "Абиссальная орда"
 }

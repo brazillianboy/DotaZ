@@ -64,12 +64,25 @@ async function loadDictionary(name) {
   }
 }
 
+/**
+ * Правило устаревания — ровно то же, что в приложении (`isDeprecatedFlag`):
+ * провайдер отдаёт и `'1'`, и `'true'`, и булево значение. Если проверять только
+ * `'1'`, устаревшие фасеты попадут в «активные» и завысят покрытие.
+ */
+function isDeprecated(value) {
+  return value === true || value === 1 || value === '1' || value === 'true'
+}
+
 /** Обход справочников: возвращает нормализованный набор строк для аудита. */
 function collect(heroAbilities, abilitiesCatalog, heroes) {
   const heroKeyById = new Map()
+  const heroNameById = new Map()
   for (const hero of Object.values(heroes)) {
     if (isRecord(hero) && typeof hero.id === 'number' && typeof hero.name === 'string') {
       heroKeyById.set(hero.id, hero.name)
+      if (typeof hero.localized_name === 'string') {
+        heroNameById.set(hero.id, hero.localized_name)
+      }
     }
   }
 
@@ -83,17 +96,34 @@ function collect(heroAbilities, abilitiesCatalog, heroes) {
   const abilities = []
   const talents = []
   const facets = new Map()
+  /** Строки по героям — для отчёта о покрытии каждого героя отдельно. */
+  const heroRows = new Map()
 
   let heroesChecked = 0
   let heroesWithoutRecord = 0
+  let deprecatedFacetsSkipped = 0
+  let technicalAbilitiesSkipped = 0
 
-  for (const heroKey of heroKeyById.values()) {
+  for (const [heroId, heroKey] of heroKeyById) {
     const record = heroAbilities[heroKey]
     if (!isRecord(record)) {
       heroesWithoutRecord += 1
       continue
     }
     heroesChecked += 1
+
+    const heroRow = {
+      heroId,
+      heroName: heroNameById.get(heroId) ?? heroKey,
+      abilities: [],
+      talents: [],
+      facets: [],
+      labels: new Set(),
+      abilityLabels: [],
+      technicalAbilities: 0,
+      deprecatedFacets: 0,
+    }
+    heroRows.set(heroId, heroRow)
 
     for (const abilityName of Array.isArray(record.abilities) ? record.abilities : []) {
       if (typeof abilityName !== 'string' || abilityName.length === 0) {
@@ -105,18 +135,29 @@ function collect(heroAbilities, abilitiesCatalog, heroes) {
       }
       const name = text(details.dname)
       if (name !== null) {
-        abilities.push({ key: abilityName, name, description: text(details.desc) })
+        const item = { key: abilityName, heroId, name, description: text(details.desc) }
+        abilities.push(item)
+        heroRow.abilities.push(item)
+      } else {
+        technicalAbilitiesSkipped += 1
+        heroRow.technicalAbilities += 1
       }
       for (const field of ['behavior', 'dmg_type', 'target_type', 'dispellable', 'bkbpierce']) {
-        const value = text(details[field])
-        if (value === null || value === 'No') {
-          continue
+        // Провайдер отдаёт `behavior` и `target_type` и строкой, и массивом строк.
+        // Массив разворачивается, иначе значения молча выпадают из подсчёта.
+        const rawValue = details[field]
+        const values = Array.isArray(rawValue) ? rawValue : [rawValue]
+        for (const candidate of values) {
+          const value = text(candidate)
+          if (value === null || value === 'No') {
+            continue
+          }
+          if (field === 'behavior') behaviors.add(value)
+          if (field === 'dmg_type') damageTypes.add(value)
+          if (field === 'target_type') targetTypes.add(value)
+          if (field === 'dispellable') dispellableValues.add(value)
+          if (field === 'bkbpierce') immunityValues.add(value)
         }
-        if (field === 'behavior') behaviors.add(value)
-        if (field === 'dmg_type') damageTypes.add(value)
-        if (field === 'target_type') targetTypes.add(value)
-        if (field === 'dispellable') dispellableValues.add(value)
-        if (field === 'bkbpierce') immunityValues.add(value)
       }
       if (Array.isArray(details.attrib)) {
         for (const entry of details.attrib) {
@@ -126,6 +167,8 @@ function collect(heroAbilities, abilitiesCatalog, heroes) {
           const header = text(entry.header)
           if (header !== null) {
             labels.add(header)
+            heroRow.labels.add(header)
+            heroRow.abilityLabels.push(header)
           }
         }
       }
@@ -139,12 +182,19 @@ function collect(heroAbilities, abilitiesCatalog, heroes) {
       const details = talentName === null ? undefined : abilitiesCatalog[talentName]
       const name = isRecord(details) ? text(details.dname) : null
       if (talentName !== null && name !== null) {
-        talents.push({ key: talentName, name })
+        const item = { key: talentName, heroId, name }
+        talents.push(item)
+        heroRow.talents.push(item)
       }
     }
 
     for (const facet of Array.isArray(record.facets) ? record.facets : []) {
-      if (!isRecord(facet) || String(facet.deprecated) === '1') {
+      if (!isRecord(facet)) {
+        continue
+      }
+      if (isDeprecated(facet.deprecated)) {
+        deprecatedFacetsSkipped += 1
+        heroRow.deprecatedFacets += 1
         continue
       }
       const facetName = text(facet.name)
@@ -152,8 +202,10 @@ function collect(heroAbilities, abilitiesCatalog, heroes) {
       if (facetName === null || title === null) {
         continue
       }
+      const item = { key: facetName, heroId, title, description: text(facet.description) }
+      heroRow.facets.push(item)
       if (!facets.has(facetName)) {
-        facets.set(facetName, { key: facetName, title, description: text(facet.description) })
+        facets.set(facetName, item)
       }
     }
   }
@@ -161,6 +213,12 @@ function collect(heroAbilities, abilitiesCatalog, heroes) {
   return {
     heroesChecked,
     heroesWithoutRecord,
+    deprecatedFacetsSkipped,
+    technicalAbilitiesSkipped,
+    heroes: [...heroRows.values()].map((row) => ({
+      ...row,
+      labels: [...row.labels],
+    })),
     abilities,
     talents,
     facets: [...facets.values()],
@@ -225,10 +283,21 @@ async function main() {
   const abilitiesWithSource = data.abilities.filter((item) => item.description !== null)
   const facetsWithSource = data.facets.filter((item) => item.description !== null)
 
+  const typeValues = [
+    ...data.behaviors,
+    ...data.damageTypes,
+    ...data.targetTypes,
+    ...data.dispellableValues,
+    ...data.immunityValues,
+  ]
+
   const report = {
     generatedAt: new Date().toISOString(),
     heroesChecked: data.heroesChecked,
     heroesWithoutRecord: data.heroesWithoutRecord,
+    /** Служебные записи без отображаемого имени — не игровые строки, не считаются долгом. */
+    technicalAbilitiesSkipped: data.technicalAbilitiesSkipped,
+    deprecatedFacetsSkipped: data.deprecatedFacetsSkipped,
     playerFacingAbilities: data.abilities.length,
     abilityNamesTranslated: data.abilities.filter((item) => !isMissing(item, names)).length,
     abilityNamesMissing: data.abilities.filter((item) => isMissing(item, names)).length,
@@ -247,36 +316,90 @@ async function main() {
     facetDescriptionsTranslated: facetsWithSource.filter(
       (item) => !isMissing(item, facetDescriptions),
     ).length,
+    facetDescriptionsMissing: facetsWithSource.filter((item) => isMissing(item, facetDescriptions))
+      .length,
     facetsWithoutSourceDescription: data.facets.length - facetsWithSource.length,
     propertyLabels: data.labels.length,
     propertyLabelsTranslated: data.labels.filter((label) => typeof labels[label] === 'string')
       .length,
     propertyLabelsMissing: data.labels.filter((label) => typeof labels[label] !== 'string').length,
-    typeLabels: [
-      ...data.behaviors,
-      ...data.damageTypes,
-      ...data.targetTypes,
-      ...data.dispellableValues,
-      ...data.immunityValues,
-    ].length,
-    typeLabelsTranslated: [
-      ...data.behaviors,
-      ...data.damageTypes,
-      ...data.targetTypes,
-      ...data.dispellableValues,
-      ...data.immunityValues,
-    ].filter((value) => typeof types[value] === 'string').length,
+    typeLabels: typeValues.length,
+    typeLabelsTranslated: typeValues.filter((value) => typeof types[value] === 'string').length,
+    typeLabelsMissing: typeValues.filter((value) => typeof types[value] !== 'string').length,
   }
 
-  const untranslatedPlayerFacing =
-    report.abilityNamesMissing +
-    report.descriptionsMissing +
-    report.talentsMissing +
-    report.facetTitlesMissing +
-    report.propertyLabelsMissing
+  /**
+   * Разбивка непереведённых игровых строк по категориям.
+   *
+   * Считаются ТОЛЬКО уникальные ключи перевода (уникальные названия способностей,
+   * уникальные описания, уникальные таланты, уникальные фасеты, уникальные подписи
+   * свойств). Повторяющиеся вхождения одной и той же подписи в разных способностях
+   * в итог не попадают — иначе число зависело бы от вёрстки, а не от объёма перевода.
+   * Отсутствие описания В ИСТОЧНИКЕ и устаревшие/служебные записи в долг не входят.
+   */
+  const untranslatedBreakdown = {
+    abilityNames: report.abilityNamesMissing,
+    abilityDescriptions: report.descriptionsMissing,
+    talents: report.talentsMissing,
+    facetTitles: report.facetTitlesMissing,
+    facetDescriptions: report.facetDescriptionsMissing,
+    propertyLabels: report.propertyLabelsMissing,
+    typeLabels: report.typeLabelsMissing,
+  }
 
+  /**
+   * Полный итог: сумма ВСЕХ категорий разбивки. Ранее описание активных фасетов
+   * не входило в сумму, из-за чего итог занижался ровно на их число.
+   */
+  const untranslatedPlayerFacing = Object.values(untranslatedBreakdown).reduce(
+    (sum, value) => sum + value,
+    0,
+  )
+
+  report.untranslatedBreakdown = untranslatedBreakdown
   report.untranslatedPlayerFacingStrings = untranslatedPlayerFacing
   report.complete = untranslatedPlayerFacing === 0
+
+  const heroCoverage = (row) => {
+    const has = (item, dict) => !isMissing(item, dict)
+    const abilitiesWithDesc = row.abilities.filter((item) => item.description !== null)
+    const facetsWithDesc = row.facets.filter((item) => item.description !== null)
+    const untranslated =
+      row.abilities.filter((item) => !has(item, names)).length +
+      abilitiesWithDesc.filter((item) => !has(item, descriptions)).length +
+      row.talents.filter((item) => !has(item, talentNames)).length +
+      row.facets.filter((item) => !has(item, facetTitles)).length +
+      facetsWithDesc.filter((item) => !has(item, facetDescriptions)).length +
+      row.labels.filter((label) => typeof labels[label] !== 'string').length
+
+    return {
+      heroId: row.heroId,
+      heroName: row.heroName,
+      abilities: row.abilities.length,
+      abilityNamesTranslated: row.abilities.filter((item) => has(item, names)).length,
+      abilitiesWithSourceDescription: abilitiesWithDesc.length,
+      descriptionsTranslated: abilitiesWithDesc.filter((item) => has(item, descriptions)).length,
+      talents: row.talents.length,
+      talentsTranslated: row.talents.filter((item) => has(item, talentNames)).length,
+      activeFacets: row.facets.length,
+      facetTitlesTranslated: row.facets.filter((item) => has(item, facetTitles)).length,
+      facetsWithSourceDescription: facetsWithDesc.length,
+      facetDescriptionsTranslated: facetsWithDesc.filter((item) => has(item, facetDescriptions))
+        .length,
+      propertyLabels: row.labels.length,
+      propertyLabelsTranslated: row.labels.filter((label) => typeof labels[label] === 'string')
+        .length,
+      missingSourceDescriptions: row.abilities.filter((item) => item.description === null).length,
+      technicalAbilities: row.technicalAbilities,
+      deprecatedFacets: row.deprecatedFacets,
+      untranslatedPlayerFacing: untranslated,
+      complete: untranslated === 0,
+    }
+  }
+
+  report.heroes = [...data.heroes]
+    .map(heroCoverage)
+    .sort((a, b) => a.heroId - b.heroId)
 
   console.log(JSON.stringify(report, null, 2))
 }

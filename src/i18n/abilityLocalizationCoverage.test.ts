@@ -25,9 +25,10 @@ import {
  *    тест упадёт, а не «тихо» уменьшит локализацию.
  *
  * Числа исходных строк — документальный baseline из
- * `node scripts/audit-ability-localization.mjs` (2026-11-09): 127 героев,
+ * `node scripts/audit-ability-localization.mjs` (2026-11-10): 127 героев,
  * 784 способности с именем, 753 описания в источнике, 996 талантов,
- * 294 активных фасета, 2819 подписей свойств, 16 подписей типов.
+ * 18 активных фасетов (ещё 321 помечен провайдером как deprecated),
+ * 2819 подписей свойств, 20 уникальных значений типов.
  */
 
 const SOURCE = {
@@ -35,23 +36,30 @@ const SOURCE = {
   abilitiesWithName: 784,
   abilitiesWithSourceDescription: 753,
   talents: 996,
-  activeFacets: 294,
+  activeFacets: 18,
   propertyLabels: 2819,
-  typeLabels: 16,
+  typeLabels: 20,
 } as const
 
 /** Зафиксированный минимум покрытия (растёт вместе со словарями, но не падает). */
 const COVERAGE_FLOOR = {
-  abilityNames: 22,
-  abilityDescriptions: 22,
-  talents: 50,
-  propertyLabels: 114,
-  typeLabels: 16,
-  facetTitles: 0,
-  facetDescriptions: 0,
+  abilityNames: 70,
+  abilityDescriptions: 70,
+  talents: 159,
+  propertyLabels: 479,
+  typeLabels: 19,
+  facetTitles: 18,
+  facetDescriptions: 18,
 } as const
 
 const CYRILLIC = /[А-Яа-яЁё]/
+
+/**
+ * Имена собственные, которые сознательно не переводятся и не транслитерируются:
+ * сферы Invoker — это названия, а не термины. Оставляем оригинал, чтобы не
+ * выдумывать «официальную» транслитерацию.
+ */
+const PROPER_NAMES = new Set(['invoker_quas', 'invoker_wex', 'invoker_exort'])
 
 const DICTIONARIES: ReadonlyArray<[string, Readonly<Record<string, string>>]> = [
   ['ability-names', ABILITY_NAMES_RU],
@@ -102,6 +110,11 @@ describe('словари русской локализации: форма да�
         if (key === DICTIONARY_META_KEY) {
           continue
         }
+        // Имена собственные (сферы Invoker) остаются в оригинале осознанно.
+        if (name === 'ability-names' && PROPER_NAMES.has(key)) {
+          expect(value, `${name}:${key}`).toMatch(/^(Quas|Wex|Exort)$/)
+          continue
+        }
         expect(CYRILLIC.test(value), `${name}:${key} => ${value}`).toBe(true)
       }
     }
@@ -110,12 +123,21 @@ describe('словари русской локализации: форма да�
 
 describe('полнота ограниченных наборов', () => {
   it('подписи типов способностей покрывают все значения провайдера', () => {
-    // В источнике 16 значений, но «Yes» встречается и в `dispellable`, и в `bkbpierce`,
-    // поэтому уникальных ключей словаря 15 — и это не пробел в покрытии.
+    // В источнике 20 значений, но «Yes» встречается и в `dispellable`, и в `bkbpierce`,
+    // поэтому уникальных ключей словаря 19 — и это не пробел в покрытии.
     const keys = Object.keys(TYPE_LABELS_RU).filter((key) => key !== DICTIONARY_META_KEY)
-    expect(keys).toHaveLength(15)
+    expect(keys).toHaveLength(19)
     expect(keys).toContain('Yes')
     expect(keys.length).toBeLessThan(SOURCE.typeLabels)
+  })
+
+  it('значения типов, приходящие массивом, тоже переведены', () => {
+    // Эти четыре значения провайдер отдаёт только внутри массивов `behavior`,
+    // поэтому раньше они выпадали из подсчёта вместе с массивами.
+    for (const value of ['Instant Cast', 'AOE', 'Autocast', 'Channeled']) {
+      expect(Object.prototype.hasOwnProperty.call(TYPE_LABELS_RU, value), value).toBe(true)
+      expect(CYRILLIC.test(localizedTypeLabel('ru', value)), value).toBe(true)
+    }
   })
 
   it('все значения типов из ответа провайдера имеют русскую подпись', () => {
