@@ -10,14 +10,15 @@ import HomePage from './pages/HomePage'
 import LoginPage from './pages/LoginPage'
 import MatchPage from './pages/MatchPage'
 import NotFoundPage from './pages/NotFoundPage'
+import ProfilePage from './pages/ProfilePage'
 import RegisterPage from './pages/RegisterPage'
+import SteamCallbackPage from './pages/SteamCallbackPage'
 
 /**
- * Маршрутизация приложения (Tasks 2–4).
+ * Маршрутизация приложения (Tasks 2–4, расширение Task 20A).
  * Публичные маршруты: `/`, `/login`, `/register`, `/auth/confirm`, `/heroes`,
- * `/matches/:matchId`. Приватный маршрут: `/history` — только после
- * подтверждения сессии (Task 4). Неизвестные адреса — страница 404.
- * Логика анализа и данных (Tasks 5+) здесь намеренно отсутствует.
+ * `/matches/:matchId`, `/auth/steam/callback`. Приватные маршруты: `/history` и
+ * `/profile` — только после подтверждения сессии (Task 4, Task 20A).
  */
 export default function App() {
   return (
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="login" element={<LoginPage />} />
         <Route path="register" element={<RegisterPage />} />
         <Route path="auth/confirm" element={<AuthConfirmPage />} />
+        <Route path="auth/steam/callback" element={<SteamCallbackPage />} />
         <Route path="heroes" element={<HeroesPage />} />
         <Route path="heroes/:heroId" element={<HeroPage />} />
         <Route path="matches/:matchId" element={<MatchPage />} />
@@ -35,6 +37,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <HistoryPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="profile"
+          element={
+            <ProtectedRoute>
+              <ProfilePage />
             </ProtectedRoute>
           }
         />

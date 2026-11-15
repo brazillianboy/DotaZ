@@ -18,7 +18,7 @@ export default function AppHeader() {
   const [logoutError, setLogoutError] = useState<string | null>(null)
   const location = useLocation()
   const navigate = useNavigate()
-  const { user, loading, signOut } = useAuth()
+  const { user, loading, signOut, steamIdentity } = useAuth()
   const { t } = useI18n()
 
   async function handleSignOut() {
@@ -141,19 +141,46 @@ export default function AppHeader() {
 
             {!loading && user && (
               <>
-                <span className="account-chip" title={user.email}>
-                  <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
-                    <circle cx="12" cy="8.5" r="3.6" stroke="currentColor" strokeWidth="1.6" fill="none" />
-                    <path
-                      d="M4.8 19.5c1-3.6 3.8-5.5 7.2-5.5s6.2 1.9 7.2 5.5"
-                      stroke="currentColor"
-                      strokeWidth="1.6"
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                  </svg>
-                  <span className="account-chip__email">{user.email}</span>
-                </span>
+                {steamIdentity === null ? (
+                  <Link className="account-chip" to="/profile" title={user.email ?? ''}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">
+                      <circle cx="12" cy="8.5" r="3.6" stroke="currentColor" strokeWidth="1.6" fill="none" />
+                      <path
+                        d="M4.8 19.5c1-3.6 3.8-5.5 7.2-5.5s6.2 1.9 7.2 5.5"
+                        stroke="currentColor"
+                        strokeWidth="1.6"
+                        fill="none"
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="account-chip__email">{user.email}</span>
+                  </Link>
+                ) : (
+                  <Link
+                    className="account-chip account-chip--steam"
+                    to="/profile"
+                    title={steamIdentity.personaName ?? t('profile.title')}
+                  >
+                    {steamIdentity.avatarUrl === null ? (
+                      <span className="account-chip__avatar account-chip__avatar--empty" aria-hidden="true">
+                        {t('auth.steam.unknownName').slice(0, 1)}
+                      </span>
+                    ) : (
+                      <img
+                        className="account-chip__avatar"
+                        src={steamIdentity.avatarUrl}
+                        alt={t('auth.steam.avatarAlt')}
+                        width={24}
+                        height={24}
+                        referrerPolicy="no-referrer"
+                        loading="lazy"
+                      />
+                    )}
+                    <span className="account-chip__email">
+                      {steamIdentity.personaName ?? t('auth.steam.unknownName')}
+                    </span>
+                  </Link>
+                )}
                 {logoutError && (
                   <span className="header-actions__error" role="alert">
                     {logoutError}

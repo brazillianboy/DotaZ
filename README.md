@@ -2291,3 +2291,265 @@ git diff --check     # exit 0, ошибок пробелов/пустых стр
 - `/heroes/68` (Ancient Apparition) в RU: «Холодные ноги», «Ледяной вихрь», «Леденящее касание», «Ледяной взрыв», «Стужа в костях» (врождённая), подписи «Урон в секунду:», «Дистанция разрыва:», «Длительность оглушения:», «Радиус действия:»; имя героя остаётся `Ancient Apparition`.
 - `/matches/9007760151` в RU: «Добивания», «Ластхиты», «Общая ценность», ЗПМ/ОПМ с подсказками, «Свет»/«Тьма»; старый «Денаи» отсутствует; **10 строк игроков**, **10 ссылок на профили**, одна выбранная строка.
 - Остаточная английская строка «Cold Feet» на `/heroes/68` — это непереведённое название таланта (`+{s:bonus_...} Cold Feet ...`), а не дефект способности.
+
+## Task 20A — Steam-аутентификация: запуск и приёмка (in_progress)
+
+**Статус:** код готов и покрыт тестами, но **реальный Steam-вход не выполнялся**. Пока не выполнены шаги ниже, Steam-вход не работает, а приложение использует вход по email.
+
+### Что реализовано
+
+| Слой | Файлы | Назначение |
+|---|---|---|
+| Ядро OpenID 2.0 | `src/lib/steam/openid.ts` | Построение `checkid_setup`, проверка ответа, `check_authentication` у Steam |
+| SteamID64 | `src/lib/steam/steamId.ts` | Строгий разбор строкой и `BigInt`, без потери точности |
+| State и редиректы | `src/lib/steam/redirect.ts` | CSRF-`state`, безопасные внутренние пути |
+| Профиль Steam | `src/lib/steam/profile.ts` | Allowlist хостов аватара, очистка ника |
+| Привязка личности | `src/lib/steam/accounts.ts`, `handler.ts` | Поиск/создание/привязка к существующему UUID, выпуск токена |
+| Клиентские хелперы | `src/lib/steamClient.ts` | Адрес функции, коды ошибок, локализация |
+| Серверная часть | `supabase/functions/steam-auth/index.ts` | `/login`, `/callback`, режим привязки |
+| Миграция | `supabase/migrations/20261110120000_dotaz_steam_identities.sql` | Таблица привязок, RLS только на чтение своей строки |
+| Интерфейс | `LoginPage`, `SteamCallbackPage`, `ProfilePage`, `AppHeader`, `AuthContext` | Steam-first вход, обмен токена, аватар и ник, `/profile` |
+
+### Как включить (владелец, после проверки)
+
+1. **Миграция.** Применить `supabase/migrations/20261110120000_dotaz_steam_identities.sql` (аддитивная, без изменения существующих таблиц). Проверить, что политик записи у `steam_identities` нет — писать должен только `service_role`.
+2. **Секреты функции** (никогда не в `VITE_*` и не в Git):
+   ```powershell
+   supabase secrets set SUPABASE_SERVICE_ROLE_KEY=... STEAM_WEB_API_KEY=... `
+     STEAM_STATE_SECRET=<32+ случайных символа> APP_ORIGIN=https://<домен> `
+     PUBLIC_FUNCTIONS_URL=https://<ref>.supabase.co/functions/v1
+   ```
+3. **Деплой функции:** `supabase functions deploy steam-auth`.
+4. **Клиент:** задать `VITE_STEAM_AUTH_URL=https://<ref>.supabase.co/functions/v1/steam-auth` и пересобрать.
+5. **Supabase Auth:** добавить разрешённые redirect URL приложения (`https://<домен>/auth/steam/callback`).
+6. **HTTPS обязателен** в production: Steam OpenID требует стабильный `realm`.
+
+### Как это устроено (кратко)
+
+Сервер проверяет подпись Steam у самого Steam (`check_authentication`, `is_valid:true`), затем выдаёт одноразовый email-токен Supabase; клиент меняет его на настоящую сессию штатным `auth.verifyOtp`. Произвольные JWT не создаются, `auth.uid()` и RLS не меняются, `service_role` остаётся на сервере.
+
+### Чек-лист ручной приёмки
+
+- [ ] Первый вход новым Steam-аккаунтом: сессия создана, в шапке аватар и ник.
+- [ ] Повторный вход тем же Steam: тот же пользователь, дубликата нет.
+- [ ] Привязка Steam к существующему email-аккаунту: `auth.uid()` прежний, сохранённые отчёты на месте.
+- [ ] Открытие `/history`: видны только свои отчёты.
+- [ ] Второй аккаунт не видит отчёты первого (в том числе прямыми запросами).
+- [ ] Выход и повторный вход: данные сохраняются.
+- [ ] Отмена на странице Steam: сообщение «Вход через Steam отменён», пользователь не аутентифицирован.
+- [ ] Повторное открытие старой ссылки callback: отказ (истёкший/использованный ответ).
+- [ ] Переключение RU/EN: подписи кнопки и ошибок меняются.
+- [ ] Мобильная шапка 390 px: аватар и меню не ломают вёрстку.
+- [ ] Истёкшая сессия: приватные маршруты перенаправляют на вход.
+
+### Ограничения
+
+- Хранилище использованных `nonce` — в памяти инстанса; для строгой защиты между инстансами нужен durable-store.
+- Steam-пользователю создаётся служебный адрес `steam+<steamid64>@users.dotaz.invalid` без пароля; вход по email для таких аккаунтов не предполагается.
+- Публичный профиль Steam необязателен: без ключа Steam Web API вход работает, ник и аватар отсутствуют.
+
+### Усиление Task 20A (2026-11-10): что изменилось
+
+| Было | Стало |
+|---|---|
+| Nonce в памяти инстанса | Таблица `steam_openid_nonces` + `steam_consume_nonce()` (атомарно, между инстансами) |
+| `token_hash` в URL callback | Одноразовый код обмена в URL, токен — в теле `POST /steam-auth/exchange` |
+| Код не привязан к браузеру | `HttpOnly`-cookie `dotaz_steam_bind` с HMAC кода + проверка `Origin` |
+| Нет интерфейса привязки | Кнопка «Привязать Steam» на `/profile` через `POST /steam-auth/link/start` |
+| Падение при «осиротевшем» пользователе | Идемпотентное восстановление через `admin.generateLink` |
+
+**Новая миграция:** `supabase/migrations/20261110130000_dotaz_steam_replay_and_exchange.sql`. Применять **после** `20261110120000_dotaz_steam_identities.sql`. Обе аддитивные.
+
+**Новые эндпоинты функции:** `POST /steam-auth/exchange` (обмен кода), `POST /steam-auth/link/start` (привязка). `GET /steam-auth/login` больше не принимает `Bearer` — привязка только через отдельный POST.
+
+**Переменные окружения не изменились.** Секреты по-прежнему задаются только через `supabase secrets set`.
+
+**Проверки (2026-11-10):** `tsc --noEmit` — 0 ошибок; `npm test` — 62 файла / 1045 тестов PASS; `npm run build` — успешно; `npm audit` — 0 уязвимостей.
+
+**Обновлённый чек-лист приёмки (дополнение):**
+- [ ] Повторное открытие ссылки `?code=…` после успешного входа — вход не происходит.
+- [ ] Ссылка `?code=…`, открытая в другом браузере, не даёт сессию (нет cookie привязки).
+- [ ] Ссылка старше 2 минут отклоняется с сообщением «устарела или использована».
+- [ ] Повторный callback от Steam с тем же ответом отклоняется (replay).
+- [ ] Кнопка «Привязать Steam» на `/profile`: привязка сохраняет прежние отчёты.
+- [ ] Попытка привязать Steam, занятый другим аккаунтом, даёт понятную ошибку.
+- [ ] Отмена на странице Steam не создаёт привязку.
+
+**Что осталось непроверенным:** реальный Steam-вход, реальный обмен токена, выполнение SQL-функций на живом Supabase (миграции не применялись).
+
+
+### Итерация 20A.4 (2026-11-10): кросс-сайтовая cookie заменена на PKCE
+
+**Причина изменения.** Приложение и Edge Function находятся на разных сайтах. Cookie `SameSite=Lax` не отправляется в кросс-сайтовом `fetch POST`, поэтому обмен кода через `dotaz_steam_bind` не работал бы; `SameSite=None` ненадёжен из-за политик сторонних cookie. Cookie удалена из схемы.
+
+**Новая схема привязки.** Приложение создаёт PKCE-секрет в `sessionStorage` своего origin и отправляет серверу только `SHA-256`. При обмене секрет приходит в теле POST, сервер сверяет хэш в том же атомарном `UPDATE`, что и списание кода.
+
+| Элемент | Значение |
+|---|---|
+| Хранилище секрета | `sessionStorage` приложения, ключ `dotaz.steam.pkce` |
+| Что видит сервер | только `code_challenge` (SHA-256, hex) |
+| Что видит браузер | только `?code=<opaque>` в URL |
+| Cookie для обмена | **не используется** |
+| TTL кода | 120 секунд, одноразовый |
+
+**JWT функции.** Добавлен `supabase/config.toml`:
+```toml
+[functions.steam-auth]
+verify_jwt = false
+```
+Без этого шлюз Supabase отвечал бы 401 на публичные шаги. Привязка `/steam-auth/link/start` при этом обязательно проверяет `Authorization: Bearer` через `admin.auth.getUser`.
+
+**Миграция `20261110130000` обновлена** (ещё не применялась): добавлен столбец `code_challenge` с `check ^[0-9a-f]{64}$`, сверка challenge в `steam_redeem_exchange`, обновлены сигнатуры и привилегии функций.
+
+**Восстановление аккаунта.** Принимается только пользователь, у которого `app_metadata.steam_id64` совпадает с проверенным SteamID64. Совпадение служебного email доказательством не считается.
+
+**Проверки (2026-11-10):** `tsc --noEmit` — 0 ошибок; `npm test` — 63 файла / 1072 теста PASS; `npm run build` — успешно; `npm audit` — 0 уязвимостей.
+
+**Дополнение к чек-листу приёмки:**
+- [ ] Ссылка `?code=…`, открытая в другом браузере или в приватном окне, не даёт сессию.
+- [ ] Повторное открытие той же ссылки в том же браузере отклоняется (код уже погашен).
+- [ ] Ссылка старше 2 минут отклоняется.
+- [ ] Если `sessionStorage` недоступен (жёсткие настройки приватности), вход показывает понятную ошибку, а не зависает.
+- [ ] `GET /steam-auth/login` без `challenge` возвращает 400 `invalid_challenge`.
+- [ ] `POST /steam-auth/exchange` с чужим `Origin` возвращает 403.
+- [ ] `POST /steam-auth/link/start` без `Bearer` возвращает 401, с чужим токеном — 401.
+
+**Что остаётся непроверенным:** реальный Steam-вход, реальный обмен и выполнение SQL-функций на живой базе (миграции не применялись, локальной БД нет).
+
+- Автотесты используют моки и **не доказывают** успешный вход у настоящего Steam.
+
+## Task 20A.5 — подготовка staging и приёмка (2026-11-10)
+
+**Статус:** `in_progress`. Ни одна удалённая операция не выполнялась: миграции не применялись, функция не развёрнута, staging-проект не создавался.
+
+### 1. Что проверено по установленному SDK (локально, без сети)
+
+Проверены объявления типов `@supabase/supabase-js` **2.118.0** / `@supabase/auth-js` **2.118.0** в `node_modules`:
+
+| Проверка | Результат |
+|---|---|
+| `admin.auth.admin.createUser(attributes)` | существует, принимает `email`, `email_confirm`, `app_metadata` |
+| `admin.auth.admin.generateLink(params)` | существует; типы: `signup`, `magiclink`, `invite`, `recovery`, `email_change_*`, `phone_change` |
+| `generateLink` **создаёт пользователя** | да, по документации SDK для `signup`, `invite`, `magiclink` |
+| `data.properties.hashed_token` | да, возвращается в ответе `generateLink` |
+| `supabase.auth.verifyOtp({ type: 'email', token_hash })` | поддерживается: `EmailOtpType` включает `'email'` |
+| `admin.auth.getUser(jwt)` | существует, принимает access token |
+| Коды ошибок | `email_exists`, `user_already_exists`, `email_address_invalid` есть в `ErrorCode` |
+
+**Не проверено без живого Supabase:** принимает ли конкретный проект адрес `steam+<id>@users.dotaz.invalid`; выдаёт ли `verifyOtp` сессию именно для нужного UUID; не требуется ли доставка письма.
+
+### 2. Исправленный дефект: восстановление аккаунта
+
+Документация SDK прямо указывает, что `generateLink` для `magiclink` **создаёт** пользователя. Прежняя логика вызывала его при **любой** ошибке `createUser` — при транзиентном сбое появился бы аккаунт без `app_metadata.steam_id64`, и такой пользователь не смог бы войти никогда (проверка метаданных его отвергает).
+
+Теперь: `createUser` с метаданными → при `email_address_invalid` внятная ошибка про `STEAM_IDENTITY_EMAIL_DOMAIN` → при любой ошибке, кроме `email_exists`/`user_already_exists`, отказ **без** вызова `generateLink` (никаких «осиротевших» аккаунтов) → только при «пользователь уже существует» восстановление с проверкой `app_metadata.steam_id64`.
+
+Домен служебных адресов стал настраиваемым: `STEAM_IDENTITY_EMAIL_DOMAIN` (по умолчанию `users.dotaz.invalid`).
+
+### 3. Порядок развёртывания staging (runbook)
+
+Пометки: **[локально]** — безопасно выполнить сейчас; **[remote]** — только после явного разрешения владельца.
+
+**Шаг 1. Отдельный staging-проект Supabase [remote]**
+Создать проект, отличный от production. Не копировать реальных пользователей и отчёты.
+
+**Шаг 2. Миграции в staging [remote]**
+```powershell
+supabase link --project-ref <staging-ref>
+supabase db push --dry-run      # проверка списка миграций
+supabase db push                # 20261018… → 20261110120000 → 20261110130000
+```
+
+**Шаг 3. Проверка схемы в staging (SQL Editor, read-only) [remote]**
+```sql
+select table_name from information_schema.tables
+ where table_schema = 'public' and table_name like 'steam%';
+
+select proname, prosecdef, proconfig from pg_proc
+ where proname in ('steam_consume_nonce','steam_create_exchange','steam_redeem_exchange');
+
+select tablename, policyname, cmd from pg_policies
+ where tablename in ('steam_identities','steam_openid_nonces','steam_login_exchanges');
+```
+Ожидается: 3 таблицы; 3 функции с `prosecdef = true` и `search_path=public`; единственная политика `select_own` у `steam_identities`, у остальных таблиц политик нет.
+
+**Шаг 4. Секреты функции [remote]**
+```powershell
+supabase secrets set --project-ref <staging-ref> `
+  SUPABASE_SERVICE_ROLE_KEY="<staging-service-role>" `
+  STEAM_STATE_SECRET="<32+ random>" `
+  APP_ORIGIN="https://<staging-domain>" `
+  PUBLIC_FUNCTIONS_URL="https://<staging-ref>.supabase.co/functions/v1" `
+  STEAM_IDENTITY_EMAIL_DOMAIN="users.dotaz.invalid"
+```
+`STEAM_WEB_API_KEY` — по желанию. Значения вводятся интерактивно; не вставляйте их в чат, файлы под контролем версий и логи.
+
+**Шаг 5. Деплой функции [remote]**
+```powershell
+supabase functions deploy steam-auth --project-ref <staging-ref>
+```
+`supabase/config.toml` уже содержит `[functions.steam-auth] verify_jwt = false`. После деплоя: `GET /functions/v1/steam-auth/login` без JWT должен отвечать редиректом на Steam или 400 `invalid_challenge`, но **не 401**.
+
+**Шаг 6. Клиент [локально]** — в `.env.local` (в `.gitignore`): `VITE_SUPABASE_URL`, `VITE_SUPABASE_PUBLISHABLE_KEY`, `VITE_STEAM_AUTH_URL` со значениями staging.
+
+**Шаг 7. Redirect URL [remote]** — в Supabase Auth → URL Configuration добавить `https://<staging-domain>/auth/steam/callback`. `APP_ORIGIN` должен совпадать с этим доменом по origin.
+
+**Шаг 8. Локальная проверка [локально]**
+```powershell
+npx.cmd tsc --noEmit
+npm.cmd test
+npm.cmd run build
+```
+
+**Шаг 9. Приёмка** — раздел 4 ниже.
+
+**Шаг 10. Откат [remote]** — функция: повторный деплой предыдущей версии; база: миграции аддитивные, удаление таблиц `steam_*` не затрагивает `profiles`/`match_reports`; вход по email остаётся рабочим на любом этапе.
+
+
+### 4. Приёмочный чек-лист staging
+
+**A. Новый Steam-пользователь**
+- [ ] Вход через Steam создаёт пользователя, `steam_identities.steam_id64` совпадает с профилем.
+- [ ] В шапке видны аватар и ник; `/profile` открывается.
+- [ ] `/history` открывается, список пуст (нет отчётов).
+- [ ] Выход и повторный вход — тот же UUID, число строк в `steam_identities` не растёт.
+
+**B. Существующий пользователь (legacy)**
+- [ ] Вход по email, UUID зафиксирован, отчёты видны.
+- [ ] На `/profile` кнопка «Привязать Steam», привязка проходит.
+- [ ] `select user_id, steam_id64 from steam_identities` — прежний UUID.
+- [ ] Отчёты на месте; выход; вход через Steam — тот же UUID и те же отчёты.
+
+**C. Безопасность**
+- [ ] Отменённый вход на Steam → сообщение об отмене, сессии нет.
+- [ ] Повторное открытие `?code=…` → отказ «устарела или использована».
+- [ ] Ссылка в другом браузере/инкогнито → отказ (нет PKCE-секрета).
+- [ ] Ссылка старше 2 минут → отказ.
+- [ ] Подмена `state`/`return_to` → отказ.
+- [ ] `POST /exchange` с чужим `Origin` → 403; `POST /link/start` без `Bearer` → 401.
+- [ ] Повторный callback от Steam → replay-отказ.
+- [ ] Два аккаунта: прямые запросы не видят чужие `match_reports`; `insert` в `steam_identities` от клиента → отказ RLS.
+- [ ] Истёкшая сессия: приватные страницы перенаправляют на вход.
+
+**D. Браузеры**
+- [ ] Chrome, [ ] Firefox, [ ] приватное окно, [ ] мобильный viewport (390 px).
+
+> Ни один браузерный сценарий пока не проверялся: Playwright в проекте не установлен, staging не существует.
+
+### 5. Критерии готовности (go/no-go)
+
+Task 20A можно считать завершённой только когда **все** пункты выполнены:
+
+1. Обе миграции применены в staging без ошибок.
+2. Реальная проверка Steam OpenID проходит (`is_valid:true` от Steam).
+3. PKCE-обмен работает в реальном браузере.
+4. Supabase выдаёт сессию для ожидаемого UUID.
+5. Повторный вход не создаёт дубликат.
+6. Legacy-пользователь привязывает Steam без потери истории.
+7. RLS блокирует чужой доступ.
+8. Отклоняются: подделка, отмена, просрочка, replay, чужой PKCE, чужой `Origin`.
+9. Топология зафиксирована (PKCE, разные сайты).
+10. Настроены платформенные лимиты частоты.
+11. Вход по email не удалён до успешной приёмки.
+
+Пункты 1–8 требуют удалённых действий и **не выполнены**.

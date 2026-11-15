@@ -867,4 +867,48 @@ export const en: Record<TranslationKey, string> = {
   'itemTimings.source': 'Source: OpenDota purchase log (purchase_log).',
   'itemTimings.method':
     'Timing method {version}; patch {patch}. Comparisons only for the same hero, lane and patch.',
+
+  // --- Task 20A: Steam sign-in ---
+  'auth.steam.signIn': 'Sign in with Steam',
+  'auth.steam.signingIn': 'Redirecting to Steam…',
+  'auth.steam.orEmail': 'or sign in with email',
+  'auth.steam.legacyNote':
+    'Email and password sign-in is temporarily kept for existing accounts until the Steam migration is finished.',
+  'auth.steam.completing': 'Completing Steam sign-in…',
+  'auth.steam.confirmTitle': 'Confirming sign-in',
+  'auth.steam.confirmText': 'Verifying the Steam response and creating your session.',
+  'auth.steam.backToLogin': 'Back to sign in',
+  'auth.steam.link': 'Link Steam to the current account',
+  'auth.steam.linkHint':
+    'Steam is linked to your current account. Saved reports and history stay where they are.',
+  'auth.steam.linked': 'Steam linked',
+  'auth.steam.unknownName': 'Steam player',
+  'auth.steam.avatarAlt': 'Steam avatar',
+  'auth.steam.error.cancelled': 'Steam sign-in was cancelled.',
+  'auth.steam.error.provider': 'Steam returned an error. Please try again.',
+  'auth.steam.error.invalid': 'Could not verify the Steam response. Sign-in was rejected.',
+  'auth.steam.error.expired': 'The Steam response has expired. Please sign in again.',
+  'auth.steam.error.replay': 'This Steam response was already used. Start sign-in again.',
+  'auth.steam.error.network': 'Steam is unreachable. Check your connection and retry.',
+  'auth.steam.error.session': 'Steam verified you, but no session was created. Please retry.',
+  'auth.steam.error.steamTaken': 'This Steam account is already linked to another user.',
+  'auth.steam.error.alreadyLinked': 'A Steam profile is already linked to your account.',
+  'auth.steam.error.notConfigured': 'Steam sign-in is not configured on this server yet.',
+  'auth.steam.error.generic': 'Steam sign-in failed.',
+  'auth.steam.error.exchangeFailed': 'Could not prepare sign-in. Please try again.',
+  'auth.steam.error.exchangeInvalid': 'This sign-in link has expired or was already used.',
+  'auth.steam.error.temporarilyUnavailable':
+    'Security verification is temporarily unavailable. Sign-in was rejected.',
+  'auth.steam.error.rateLimited': 'Too many attempts. Wait a minute and try again.',
+  'auth.steam.linkSuccess': 'Steam is now linked to your account.',
+  'nav.account': 'Account',
+  'nav.profile': 'My profile',
+  'profile.title': 'Personal profile',
+  'profile.placeholderTitle': 'Dota 2 profile is being prepared',
+  'profile.placeholderText':
+    'Your Steam identity is verified. Full player statistics, matches and progress arrive in Task 20B.',
+  'profile.steamId': 'SteamID64',
+  'profile.openSteam': 'Open Steam profile',
+  'profile.noSteam': 'No Steam profile is linked to this account.',
+  'profile.notLinkedHint': 'Link Steam to see your statistics here in the future.',
 } as const

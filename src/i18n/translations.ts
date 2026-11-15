@@ -887,6 +887,52 @@ export const ru = {
   'itemTimings.source': 'Источник: журнал покупок OpenDota (purchase_log).',
   'itemTimings.method':
     'Методика таймингов {version}; патч {patch}. Сравнение — только для того же героя, линии и патча.',
+
+  // --- Task 20A: вход через Steam ---
+  'auth.steam.signIn': 'Войти через Steam',
+  'auth.steam.signingIn': 'Переход в Steam…',
+  'auth.steam.orEmail': 'или войдите по email',
+  'auth.steam.legacyNote':
+    'Вход по email и паролю временно сохранён для существующих аккаунтов, пока переход на Steam не завершён.',
+  'auth.steam.completing': 'Завершаем вход через Steam…',
+  'auth.steam.confirmTitle': 'Подтверждение входа',
+  'auth.steam.confirmText': 'Проверяем ответ Steam и создаём сессию.',
+  'auth.steam.backToLogin': 'Вернуться ко входу',
+  'auth.steam.link': 'Привязать Steam к текущему аккаунту',
+  'auth.steam.linkHint':
+    'Steam привязывается к вашему текущему аккаунту. Сохранённые отчёты и история останутся на месте.',
+  'auth.steam.linked': 'Steam привязан',
+  'auth.steam.unknownName': 'Игрок Steam',
+  'auth.steam.avatarAlt': 'Аватар Steam',
+  'auth.steam.error.cancelled': 'Вход через Steam отменён.',
+  'auth.steam.error.provider': 'Steam вернул ошибку. Попробуйте войти ещё раз.',
+  'auth.steam.error.invalid':
+    'Не удалось подтвердить ответ Steam. Вход отклонён, данные не изменены.',
+  'auth.steam.error.expired': 'Срок действия ответа Steam истёк. Попробуйте войти заново.',
+  'auth.steam.error.replay': 'Этот ответ Steam уже использован. Начните вход заново.',
+  'auth.steam.error.network': 'Steam недоступен. Проверьте соединение и повторите попытку.',
+  'auth.steam.error.session': 'Steam подтвердил вход, но сессия не создана. Повторите попытку.',
+  'auth.steam.error.steamTaken': 'Этот Steam-аккаунт уже привязан к другому пользователю.',
+  'auth.steam.error.alreadyLinked': 'К вашему аккаунту уже привязан Steam-профиль.',
+  'auth.steam.error.notConfigured': 'Вход через Steam пока не настроен на этом сервере.',
+  'auth.steam.error.generic': 'Не удалось войти через Steam.',
+  'auth.steam.error.exchangeFailed': 'Не удалось подготовить вход. Попробуйте ещё раз.',
+  'auth.steam.error.exchangeInvalid':
+    'Ссылка входа устарела или уже использована. Начните вход заново.',
+  'auth.steam.error.temporarilyUnavailable':
+    'Проверка безопасности временно недоступна. Вход отклонён — повторите позже.',
+  'auth.steam.error.rateLimited': 'Слишком много попыток. Подождите минуту и повторите.',
+  'auth.steam.linkSuccess': 'Steam привязан к вашему аккаунту.',
+  'nav.account': 'Аккаунт',
+  'nav.profile': 'Мой профиль',
+  'profile.title': 'Личный профиль',
+  'profile.placeholderTitle': 'Профиль Dota 2 готовится',
+  'profile.placeholderText':
+    'Steam-личность подтверждена. Полная статистика игрока, матчи и прогресс появятся в Task 20B.',
+  'profile.steamId': 'SteamID64',
+  'profile.openSteam': 'Открыть профиль в Steam',
+  'profile.noSteam': 'К аккаунту не привязан Steam-профиль.',
+  'profile.notLinkedHint': 'Привяжите Steam, чтобы в будущем видеть здесь свою статистику.',
 } as const
 
 export type TranslationKey = keyof typeof ru

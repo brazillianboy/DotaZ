@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { useI18n } from '../i18n/I18nContext'
 import { authErrorText, type AuthErrorCode } from '../i18n/errors'
+import { readSteamError, steamErrorKey } from '../lib/steamClient'
 
 /**
  * Безопасный целевой маршрут после входа (Task 4).
@@ -34,7 +35,7 @@ function getSafeRedirectTarget(state: unknown): string {
  * (переданный через state при редиректе из ProtectedRoute) либо на главную.
  */
 export default function LoginPage() {
-  const { signIn, user, loading, isConfigured } = useAuth()
+  const { signIn, user, loading, isConfigured, isSteamConfigured, startSteamSignIn } = useAuth()
   const { t } = useI18n()
   const navigate = useNavigate()
   const location = useLocation()
@@ -45,6 +46,24 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null)
   const [errorCode, setErrorCode] = useState<AuthErrorCode | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [steamBusy, setSteamBusy] = useState(false)
+  const [steamFailure, setSteamFailure] = useState<string | null>(null)
+
+  const steamError = readSteamError(location.search)
+
+  async function handleSteamSignIn() {
+    if (steamBusy) {
+      return
+    }
+    setSteamBusy(true)
+    const result = await startSteamSignIn(redirectTo)
+    if (!result.ok) {
+      setSteamBusy(false)
+      setErrorCode(null)
+      setError(null)
+      setSteamFailure(result.steamErrorCode ?? 'generic')
+    }
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -110,7 +129,35 @@ export default function LoginPage() {
           )}
 
           {!loading && isConfigured && !user && (
-            <form className="auth-form" onSubmit={handleSubmit} noValidate>
+            <>
+              {(steamFailure !== null || steamError !== null) && (
+                <p className="auth-alert auth-alert--error" role="alert">
+                  {t(steamErrorKey(steamFailure ?? steamError))}
+                </p>
+              )}
+
+              <div className="auth-steam">
+                <button
+                  type="button"
+                  className="btn btn--steam auth-steam__button"
+                  onClick={handleSteamSignIn}
+                  disabled={steamBusy}
+                >
+                  {steamBusy ? t('auth.steam.signingIn') : t('auth.steam.signIn')}
+                </button>
+                {!isSteamConfigured && (
+                  <p className="auth-hint" role="status">
+                    {t('auth.steam.error.notConfigured')}
+                  </p>
+                )}
+              </div>
+
+              <p className="auth-divider" aria-hidden="true">
+                {t('auth.steam.orEmail')}
+              </p>
+              <p className="auth-hint">{t('auth.steam.legacyNote')}</p>
+
+              <form className="auth-form" onSubmit={handleSubmit} noValidate>
               {error && (
                 <p className="auth-alert auth-alert--error" role="alert">
                   {errorCode === null ? error : authErrorText(t, errorCode, error)}
@@ -162,6 +209,7 @@ export default function LoginPage() {
                 <Link to="/register">{t('auth.registerLink')}</Link>.
               </p>
             </form>
+            </>
           )}
         </div>
       </div>
