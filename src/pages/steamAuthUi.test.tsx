@@ -187,7 +187,7 @@ describe('Task 20A: привязка Steam к существующему акк�
 
 
 describe('Task 20A: страница профиля', () => {
-  it('показывает проверенный SteamID64 и ник', () => {
+  it('показывает проверенный SteamID64, ник и вычисленный account ID', () => {
     const html = render(
       <ProfilePage />,
       '/profile',
@@ -200,16 +200,19 @@ describe('Task 20A: страница профиля', () => {
         },
       }),
     )
-    expect(html).toContain('Личный профиль')
+    expect(html).toContain('Steam подтверждён')
     expect(html).toContain(STEAM_ID)
     expect(html).toContain('Игрок Один')
-    expect(html).toContain('Task 20B')
+    // 76561198000000001 − 76561197960265728 = 39734273
+    expect(html).toContain('39734273')
+    expect(html).not.toContain('Task 20B')
   })
 
-  it('без привязки честно сообщает об отсутствии Steam', () => {
+  it('без привязки честно сообщает об отсутствии Steam и не рендерит статистику', () => {
     const html = render(<ProfilePage />, '/profile')
     expect(html).toContain('не привязан Steam-профиль')
-    expect(html).not.toContain('SteamID64')
+    expect(html).not.toContain('Dota 2 account ID')
+    expect(html).not.toContain('<input')
   })
 })
 

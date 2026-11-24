@@ -71,14 +71,64 @@ export function steamProfileUrl(steamId64: string): string | null {
 }
 
 /**
+ * Максимальный 32-битный account id: `2^32 − 1`.
+ * Именно этот диапазон заложен в SteamID64 индивидуального аккаунта.
+ */
+export const DOTA_ACCOUNT_ID_MAX = 0xffffffff
+
+/**
  * Восстанавливает SteamID64 из 32-битного account id (для серверных нужд).
  * Возвращает строку, а не число.
  */
 export function steamIdFromAccountId(accountId: number): string | null {
-  if (!Number.isInteger(accountId) || accountId < 0 || accountId > 0xffffffff) {
+  if (!Number.isInteger(accountId) || accountId < 0 || accountId > DOTA_ACCOUNT_ID_MAX) {
     return null
   }
   return (BigInt(STEAM_ID64_INDIVIDUAL_BASE) + BigInt(accountId)).toString()
+}
+
+/**
+ * Dota 2 / OpenDota `account_id` из проверенного SteamID64 (Task 20B).
+ *
+ * Связь трёх идентификаторов, которые нельзя путать:
+ *  - **Supabase UUID** (`auth.users.id`) — владелец строк в PostgreSQL и RLS;
+ *  - **SteamID64** — подтверждённая OpenID 2.0 личность Steam (строка из 17 цифр);
+ *  - **account_id** — 32-битный номер аккаунта Dota 2, которым оперирует OpenDota.
+ *
+ * Формула для публичного индивидуального аккаунта:
+ * `account_id = SteamID64 − 76561197960265728`.
+ *
+ * Расчёт ведётся строкой и `BigInt`: SteamID64 не помещается в безопасный
+ * диапазон `Number` (2^53−1), поэтому числовая арифметика исказила бы старшие
+ * разряды. В `Number` значение переводится только после проверки, что результат
+ * — целое число в допустимом диапазоне `0 … 2^32−1` и безопасное целое.
+ *
+ * Ограничения:
+ *  - поддерживаются только **индивидуальные** аккаунты Steam (тот же диапазон,
+ *    что у `isSteamId64`); анонимные (Lobby) и клановые идентификаторы отклоняются;
+ *  - `account_id = 0` математически корректен, но у Dota 2 такого аккаунта нет:
+ *    запрос к OpenDota вернёт «не найдено», а не выдуманные данные;
+ *  - обратное преобразование — `steamIdFromAccountId`; исходный SteamID64 эта
+ *    функция не изменяет и не хранит.
+ *
+ * @returns account id либо `null`, если SteamID64 некорректен/неподдерживаем.
+ */
+export function accountIdFromSteamId64(value: unknown): number | null {
+  const steamId = parseSteamId64(value)
+  if (steamId === null) {
+    return null
+  }
+  const account = BigInt(steamId) - BigInt(STEAM_ID64_INDIVIDUAL_BASE)
+  if (account < BigInt(0) || account > BigInt(DOTA_ACCOUNT_ID_MAX)) {
+    return null
+  }
+  // Проверка точности перед переходом в Number: диапазон 2^32−1 заведомо
+  // меньше 2^53−1, но условие оставлено явным, чтобы правило было проверяемым.
+  if (account > BigInt(Number.MAX_SAFE_INTEGER)) {
+    return null
+  }
+  const asNumber = Number(account)
+  return Number.isSafeInteger(asNumber) ? asNumber : null
 }
 
 /**

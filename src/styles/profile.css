@@ -1,0 +1,1063 @@
+/* ============================================================
+   DotaZ — личный профиль Dota 2 (Task 20B)
+   Использует токены дизайн-системы из global.css, не создаёт новую палитру.
+   ============================================================ */
+
+.page--profile {
+  padding: 40px 0 96px;
+  background:
+    radial-gradient(90% 60% at 85% 0%, rgba(239, 48, 56, 0.08), transparent 60%),
+    radial-gradient(70% 50% at 8% 8%, rgba(70, 110, 160, 0.1), transparent 65%),
+    var(--bg-primary);
+}
+
+.page--profile .container {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* ---------- Заголовок профиля ---------- */
+
+.profile-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 24px;
+  padding: 26px 28px;
+}
+
+.profile-header__avatar-wrap {
+  flex-shrink: 0;
+}
+
+.profile-header__avatar {
+  width: 112px;
+  height: 112px;
+  border-radius: 16px;
+  object-fit: cover;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+}
+
+.profile-header__avatar--empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  font-weight: 800;
+  color: var(--text-secondary);
+}
+
+.profile-header__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.profile-header__name {
+  font-size: clamp(24px, 3vw, 32px);
+  font-weight: 800;
+  letter-spacing: -0.3px;
+  overflow-wrap: anywhere;
+}
+
+.profile-header__hint {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.profile-header__ids {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 6px 0 0;
+}
+
+.profile-header__id dt {
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.profile-header__id dd {
+  margin: 2px 0 0;
+  font-size: 14px;
+}
+
+.profile-header__id code {
+  font-family: ui-monospace, 'Cascadia Code', Consolas, monospace;
+  font-size: 13.5px;
+  overflow-wrap: anywhere;
+}
+
+.profile-header__id-missing {
+  color: var(--text-secondary);
+}
+
+.profile-header__note {
+  color: var(--text-secondary);
+  font-size: 13px;
+  max-width: 620px;
+}
+
+.profile-header__link {
+  color: var(--accent-hover);
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-header__link:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Каркас секций ---------- */
+
+.profile-section {
+  min-width: 0;
+}
+
+.profile-section__head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.profile-section__title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.profile-section__lead {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.profile-note {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.profile-note--warn {
+  color: #ffc069;
+}
+
+.profile-loading,
+.profile-unavailable {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 28px;
+}
+
+/* ---------- Обзор ---------- */
+
+.profile-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.profile-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 18px 20px;
+}
+
+.profile-stat__label {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.profile-stat__value {
+  font-size: 28px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-stat__value--win {
+  color: #7ee2b0;
+}
+
+.profile-stat__value--loss {
+  color: #ff9a9e;
+}
+
+.profile-stat__hint {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.profile-latest {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 18px 20px;
+}
+
+.profile-latest__title {
+  font-size: 15px;
+  color: var(--text-secondary);
+}
+
+.profile-latest__row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0;
+}
+
+.profile-latest__date {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* ---------- Результат матча ---------- */
+
+.profile-outcome {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.profile-outcome--win {
+  background: rgba(94, 219, 155, 0.14);
+  color: #7ee2b0;
+}
+
+.profile-outcome--loss {
+  background: rgba(239, 48, 56, 0.16);
+  color: #ff9a9e;
+}
+
+.profile-outcome--unknown {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-secondary);
+}
+
+/* ---------- Сетка из двух колонок ---------- */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: start;
+}
+
+/* ---------- Последние матчи ---------- */
+
+.profile-matches {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.profile-match {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 14px 18px;
+}
+
+.profile-match__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 240px;
+  flex: 1;
+}
+
+.profile-match__identity {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-match__hero {
+  font-weight: 700;
+}
+
+.profile-match__meta {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.profile-match__stats {
+  display: flex;
+  gap: 22px;
+  margin: 0;
+}
+
+.profile-match__stats dt {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.profile-match__stats dd {
+  margin: 0;
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-match__open {
+  color: var(--accent-hover);
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.profile-match__open:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* ---------- Герои ---------- */
+
+.profile-heroes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+}
+
+.profile-hero__body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-hero__name {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.profile-hero__line {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.profile-hero__rate {
+  font-size: 15px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-heroes__toggle {
+  align-self: flex-start;
+}
+
+/* ---------- Портрет героя ---------- */
+
+.hero-avatar {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.hero-avatar__image {
+  width: 64px;
+  height: 36px;
+  border-radius: 6px;
+  object-fit: cover;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-secondary);
+}
+
+.hero-avatar__fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 36px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.hero-avatar--sm .hero-avatar__image,
+.hero-avatar--sm .hero-avatar__fallback {
+  width: 48px;
+  height: 27px;
+}
+
+/* ---------- Активность ---------- */
+
+.profile-activity {
+  padding: 20px 22px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-activity__window {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.profile-activity__bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 120px;
+  margin: 0;
+}
+
+.profile-activity__bar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  position: relative;
+}
+
+.profile-activity__fill {
+  display: block;
+  width: 100%;
+  min-height: 0;
+  border-radius: 6px 6px 2px 2px;
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent-primary));
+  opacity: 0.85;
+}
+
+/* ---------- Линии ---------- */
+
+.profile-lanes {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+}
+
+.profile-lanes__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.profile-lane__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.profile-lane__name {
+  font-weight: 600;
+}
+
+.profile-lane__share {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+}
+
+.profile-lane__track {
+  height: 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.profile-lane__bar {
+  display: block;
+  height: 100%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent-primary), var(--accent-hover));
+}
+
+.profile-lane__meta {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+  margin-top: 4px;
+}
+
+/* ---------- Сохранённые анализы ---------- */
+
+.profile-saved {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+}
+
+.profile-saved__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-saved__item {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.profile-saved__identity {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profile-saved__match {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.profile-saved__meta {
+  color: var(--text-secondary);
+  font-size: 12.5px;
+}
+
+.profile-saved__open {
+  color: var(--accent-hover);
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.profile-saved__open:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.profile-saved__pending {
+  color: #ffc069;
+  font-size: 12.5px;
+}
+
+.profile-saved__history {
+  align-self: flex-start;
+}
+
+/* ---------- Прогресс (заглушка Task 20) ---------- */
+
+.profile-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+}
+
+.profile-progress__text {
+  color: var(--text-primary);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.profile-progress__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- Ошибка секции ---------- */
+
+.profile-error {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.profile-error__text {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.profile-error__retry {
+  align-self: flex-start;
+}
+
+/* ---------- Сводка линий (полная история) ---------- */
+
+.profile-lanes__summary {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin: 0 0 14px;
+}
+
+.profile-lanes__summary div {
+  padding: 12px 14px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.profile-lanes__summary dt {
+  color: var(--text-secondary);
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.profile-lanes__summary dd {
+  margin: 4px 0 0;
+  font-size: 20px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-lane--undetermined .profile-lane__bar {
+  background: linear-gradient(90deg, #6b7280, #8b93a1);
+}
+
+/* ---------- Ежедневный календарь активности ---------- */
+
+.profile-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 20px 22px;
+}
+
+.profile-calendar__window {
+  color: var(--text-secondary);
+  font-size: 13.5px;
+  margin: 0;
+}
+
+.profile-calendar__weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  color: var(--text-secondary);
+  font-size: 12px;
+  text-align: center;
+}
+
+.profile-calendar__month {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-calendar__month-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.profile-calendar__grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin: 0;
+}
+
+.profile-calendar__cell {
+  list-style: none;
+}
+
+.profile-calendar__cell--blank {
+  background: transparent;
+}
+
+.profile-calendar__day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 100%;
+  min-height: 44px;
+  padding: 5px 2px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  cursor: default;
+  font: inherit;
+}
+
+.profile-calendar__day:focus-visible {
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 2px;
+}
+
+.profile-calendar__num {
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-calendar__count {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-calendar__day--l0 {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-calendar__day--l1 {
+  background: rgba(239, 48, 56, 0.22);
+}
+
+.profile-calendar__day--l2 {
+  background: rgba(239, 48, 56, 0.4);
+}
+
+.profile-calendar__day--l3 {
+  background: rgba(239, 48, 56, 0.68);
+}
+
+.profile-calendar__day--today {
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
+}
+
+.profile-calendar__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+}
+
+.profile-calendar__scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.profile-calendar__swatch {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+.profile-calendar__swatch--0 {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profile-calendar__swatch--1 {
+  background: rgba(239, 48, 56, 0.22);
+}
+
+.profile-calendar__swatch--2 {
+  background: rgba(239, 48, 56, 0.4);
+}
+
+.profile-calendar__swatch--3 {
+  background: rgba(239, 48, 56, 0.68);
+}
+
+/* ---------- Тепловая карта активности (GitHub-стиль, Task 20B.5) ---------- */
+
+.profile-heat {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 22px;
+}
+
+.profile-heat__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.profile-heat__year {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text-secondary);
+}
+
+.profile-heat__year-select {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 6px 10px;
+}
+
+.profile-heat__total {
+  font-size: 13.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.profile-heat__scroll {
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.profile-heat__months {
+  display: grid;
+  column-gap: 3px;
+  margin: 0 0 6px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.profile-heat__month {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.profile-heat__body {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+}
+
+.profile-heat__weekdays {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  row-gap: 3px;
+  width: 34px;
+  flex: none;
+  font-size: 10px;
+  color: var(--text-secondary);
+}
+
+.profile-heat__weekdays span {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.profile-heat__weeks {
+  display: flex;
+  gap: 3px;
+}
+
+.profile-heat__week {
+  display: grid;
+  grid-template-rows: repeat(7, 14px);
+  row-gap: 3px;
+}
+
+.profile-heat__cell,
+.profile-heat__blank {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 0;
+  padding: 0;
+}
+
+.profile-heat__blank {
+  background: transparent;
+}
+
+.profile-heat__cell {
+  cursor: pointer;
+  background: #161b22;
+}
+
+.profile-heat__cell:focus-visible {
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 1px;
+}
+
+.profile-heat__cell--l0 {
+  background: #161b22;
+}
+
+.profile-heat__cell--l1 {
+  background: #0e4429;
+}
+
+.profile-heat__cell--l2 {
+  background: #006d32;
+}
+
+.profile-heat__cell--l3 {
+  background: #26a641;
+}
+
+.profile-heat__cell--l4 {
+  background: #39d353;
+}
+
+.profile-heat__cell--na {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.profile-heat__cell--today {
+  box-shadow: inset 0 0 0 1px var(--accent-primary);
+}
+
+.profile-heat__live {
+  font-size: 13px;
+  color: var(--text-secondary);
+  min-height: 20px;
+}
+
+.profile-heat__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.profile-heat__legend-text {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.profile-heat__scale {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.profile-heat__swatch {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+
+.profile-heat__swatch--0 {
+  background: #161b22;
+  border: 1px solid var(--border-subtle);
+}
+
+.profile-heat__swatch--1 {
+  background: #0e4429;
+}
+
+.profile-heat__swatch--2 {
+  background: #006d32;
+}
+
+.profile-heat__swatch--3 {
+  background: #26a641;
+}
+
+.profile-heat__swatch--4 {
+  background: #39d353;
+}
+
+.profile-calendar__day--l1 .profile-calendar__count,
+.profile-calendar__day--l2 .profile-calendar__count,
+.profile-calendar__day--l3 .profile-calendar__count {
+  color: #fff;
+}
+
+.profile-note--muted {
+  color: rgba(174, 187, 208, 0.75);
+}
+
+/* ---------- Адаптивность ---------- */
+
+@media (max-width: 900px) {
+  .profile-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-match__main {
+    min-width: 0;
+  }
+
+  .profile-lanes__summary {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .page--profile {
+    padding-top: 24px;
+  }
+
+  .profile-header {
+    flex-direction: column;
+    gap: 16px;
+    padding: 20px;
+  }
+
+  .profile-header__avatar {
+    width: 84px;
+    height: 84px;
+  }
+
+  .profile-stats {
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .profile-stat {
+    padding: 14px 16px;
+  }
+
+  .profile-stat__value {
+    font-size: 24px;
+  }
+
+  .profile-match {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .profile-calendar {
+    padding: 16px 12px;
+  }
+
+  .profile-calendar__day {
+    min-height: 38px;
+    gap: 0;
+    padding: 3px 1px;
+  }
+
+  .profile-calendar__num {
+    font-size: 11px;
+  }
+
+  .profile-calendar__count {
+    font-size: 10px;
+  }
+}

@@ -8,7 +8,7 @@ import {
   type ReactNode,
 } from 'react'
 
-import { formatPercentValue, formatUtcDateTime } from './formatters'
+import { formatPercentValue, formatUtcDate, formatUtcDateTime } from './formatters'
 import {
   DEFAULT_LOCALE,
   interpolate,
@@ -36,6 +36,8 @@ export interface I18nContextValue {
   t: (key: TranslationKey, params?: Record<string, string | number>) => string
   /** Временная метка в UTC с учётом локали (или `null`, если значения нет). */
   formatDateTime: (value: string | null) => string | null
+  /** Дата в UTC без времени с учётом локали (или `null`, если значения нет). */
+  formatDate: (value: string | null) => string | null
   /** Процент с учётом локали (значение не изменяется). */
   formatPercent: (value: number) => string
 }
@@ -95,6 +97,7 @@ export const I18nContext = createContext<I18nContextValue>({
   setLocale: () => {},
   t: createTranslate(DEFAULT_LOCALE),
   formatDateTime: (value) => formatUtcDateTime(value, DEFAULT_LOCALE),
+  formatDate: (value) => formatUtcDate(value, DEFAULT_LOCALE),
   formatPercent: (value) => formatPercentValue(value, DEFAULT_LOCALE),
 })
 
@@ -124,6 +127,7 @@ export function I18nProvider({ children, initialLocale }: I18nProviderProps) {
       setLocale,
       t: createTranslate(locale),
       formatDateTime: (input) => formatUtcDateTime(input, locale),
+      formatDate: (input) => formatUtcDate(input, locale),
       formatPercent: (input) => formatPercentValue(input, locale),
     }),
     [locale, setLocale],
