@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage'
 import MatchPage from './pages/MatchPage'
 import NotFoundPage from './pages/NotFoundPage'
 import ProfilePage from './pages/ProfilePage'
+import ProgressPage from './pages/ProgressPage'
 import RegisterPage from './pages/RegisterPage'
 import SteamCallbackPage from './pages/SteamCallbackPage'
 
@@ -45,6 +46,14 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ProfilePage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="progress"
+          element={
+            <ProtectedRoute>
+              <ProgressPage />
             </ProtectedRoute>
           }
         />

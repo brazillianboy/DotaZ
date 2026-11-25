@@ -10,6 +10,7 @@ import './styles/layout.css'
 import './styles/home.css'
 import './styles/pages.css'
 import './styles/profile.css'
+import './styles/progress.css'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

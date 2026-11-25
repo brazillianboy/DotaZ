@@ -5,10 +5,10 @@ import { useI18n } from '../i18n/I18nContext'
 /**
  * Точка интеграции основной Task 20 (прогресс игрока) в профиль (Task 20B).
  *
- * Task 20 — «история прогресса и сравнение матчей» — самостоятельная задача и в
- * Task 20B **не** реализуется, не подменяется и не помечается выполненной. Здесь
- * честно сказано, что долгосрочный прогресс пока недоступен, и даны ссылки на уже
- * работающие разделы. Никаких выдуманных трендов, рейтинга или «улучшения» нет.
+ * Долгосрочный прогресс, динамика показателей и сравнение матчей — самостоятельная
+ * задача Task 20 и реализуется на отдельной странице `/progress`. Здесь дана ссылка
+ * на неё, а вторичные ссылки ведут в уже работающие разделы. Никаких выдуманных
+ * трендов, рейтинга или «улучшения» в самом профиле нет.
  */
 export default function ProfileProgress() {
   const { t } = useI18n()
@@ -23,16 +23,16 @@ export default function ProfileProgress() {
 
       <div className="profile-progress panel">
         <p className="profile-note">
-          <span className="badge badge--warn profile-progress__badge">{t('profile.progress.badge')}</span>
+          <span className="badge badge--ok profile-progress__badge">{t('profile.progress.badge')}</span>
         </p>
         <p className="profile-progress__text">{t('profile.progress.text')}</p>
         <p className="profile-note">{t('profile.progress.current')}</p>
         <div className="profile-progress__actions">
+          <Link className="btn btn--primary" to="/progress">
+            {t('profile.progress.open')}
+          </Link>
           <Link className="btn btn--ghost" to="/history">
             {t('profile.progress.history')}
-          </Link>
-          <Link className="btn btn--ghost" to="/">
-            {t('profile.progress.analyzeMatch')}
           </Link>
         </div>
       </div>

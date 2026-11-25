@@ -109,6 +109,11 @@ export default function AppHeader() {
                 </NavLink>
               </li>
               <li>
+                <NavLink to="/progress" className="main-nav__link">
+                  {t('nav.progress')}
+                </NavLink>
+              </li>
+              <li>
                 <span
                   className="main-nav__link main-nav__link--disabled"
                   aria-disabled="true"

@@ -7,6 +7,7 @@ import {
   type MatchReportsClient,
   type ReportDbError,
 } from './matchReports'
+import type { ProgressReportsListClient } from './progressFlow'
 
 /**
  * Адаптер Supabase → `MatchReportsClient` и `MatchReportsListClient` (Tasks 11–12).
@@ -100,6 +101,29 @@ export function createSupabaseHistoryReportsClient(
       const { data, error } = await supabase
         .from(MATCH_REPORTS_TABLE)
         .select(HISTORY_REPORT_COLUMNS)
+        .eq('user_id', userId)
+        .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
+        .range(offset, offset + limit - 1)
+      return { data: data ?? [], error: toReportDbError(error) }
+    },
+  }
+}
+
+/**
+ * Клиент прогресса (Task 20): загружает полные payload (метрики игрока, линия,
+ * наблюдения) для собственных отчётов. Отличие от клиента истории — наличие
+ * `match_payload` и `analysis_payload`, необходимых для сравнения и графиков.
+ * Запрос по-прежнему ограничен текущим пользователем, RLS остаётся вторым барьером.
+ */
+export function createSupabaseProgressReportsClient(
+  supabase: SupabaseClient,
+): ProgressReportsListClient {
+  return {
+    async selectPersonalReportsFull({ userId, limit, offset }) {
+      const { data, error } = await supabase
+        .from(MATCH_REPORTS_TABLE)
+        .select(MATCH_REPORT_COLUMNS)
         .eq('user_id', userId)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })

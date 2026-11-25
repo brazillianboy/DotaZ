@@ -1,0 +1,389 @@
+/* ============================================================
+   DotaZ — прогресс игрока и сравнение матчей (Task 20)
+   Тёмная тема, переменные и сетка — из global.css / pages.css.
+   ============================================================ */
+
+.page--progress {
+  padding: 40px 0 96px;
+  min-height: 62vh;
+  background:
+    radial-gradient(90% 70% at 85% 0%, rgba(239, 48, 56, 0.1), transparent 60%),
+    radial-gradient(70% 60% at 10% 10%, rgba(70, 110, 160, 0.12), transparent 65%),
+    var(--bg-primary);
+}
+
+.progress-page__head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.progress-notice {
+  margin-bottom: 16px;
+}
+
+.progress-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 22px 24px;
+  margin-bottom: 20px;
+  min-width: 0;
+}
+
+.progress-section__head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.progress-section__title {
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+/* ---------- Выбор матчей ---------- */
+
+.progress-select__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+}
+
+.progress-select__count {
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.progress-select__list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progress-select__item {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.progress-select__item:hover {
+  border-color: rgba(239, 48, 56, 0.5);
+}
+
+.progress-select__label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  cursor: pointer;
+}
+
+.progress-select__checkbox {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  accent-color: var(--accent-primary);
+}
+
+.progress-select__main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+
+.progress-select__hero {
+  font-weight: 700;
+  overflow-wrap: anywhere;
+}
+
+.progress-select__meta {
+  color: var(--text-secondary);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.progress-select__open {
+  flex-shrink: 0;
+}
+
+/* ---------- Таблицы сравнения ---------- */
+
+.progress-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.progress-table {
+  width: 100%;
+  min-width: 640px;
+  border-collapse: collapse;
+  font-size: 13.5px;
+}
+
+.progress-table thead th {
+  padding: 10px 12px;
+  text-align: left;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.progress-table tbody tr:not(:last-child) td,
+.progress-table tbody tr:not(:last-child) th {
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.progress-cell {
+  padding: 10px 12px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-cell--hero {
+  font-weight: 700;
+}
+
+/* ---------- Фильтры и выбор показателя ---------- */
+
+.progress-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.progress-filter__field,
+.progress-metric-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.progress-filter__label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.progress-filter__select,
+.progress-filter__input {
+  min-width: 150px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+
+.progress-filter__select:focus-visible,
+.progress-filter__input:focus-visible {
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 2px;
+}
+
+.progress-metric-picker {
+  margin-top: 12px;
+  max-width: 280px;
+}
+
+/* ---------- Диаграмма ---------- */
+
+.progress-chart {
+  margin-top: 14px;
+}
+
+.progress-chart__plot {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 220px;
+  padding: 12px 8px 8px;
+  overflow-x: auto;
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.progress-chart__col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  flex: 1;
+  min-width: 64px;
+  height: 100%;
+}
+
+.progress-chart__value {
+  font-size: 11px;
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.progress-chart__bar {
+  width: 100%;
+  max-width: 46px;
+  min-height: 4px;
+  border-radius: 5px 5px 0 0;
+  background: linear-gradient(180deg, var(--accent-hover), var(--accent-primary));
+}
+
+.progress-chart__date {
+  font-size: 10px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+/* ---------- Повторяющиеся наблюдения ---------- */
+
+.progress-observations {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.progress-observation {
+  padding: 12px 14px;
+  border-left: 3px solid var(--accent-primary);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.progress-observation__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.progress-observation__rule {
+  font-size: 12.5px;
+  color: #ffc069;
+  overflow-wrap: anywhere;
+}
+
+.progress-observation__count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.progress-observation__metric,
+.progress-observation__supporting,
+.progress-observation__frequency {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  overflow-wrap: anywhere;
+}
+
+/* ---------- История изменений ---------- */
+
+.progress-improvements {
+  display: flex;
+  flex-direction: column;
+}
+
+.progress-improvement {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.progress-improvement:last-child {
+  border-bottom: none;
+}
+
+.progress-improvement__label {
+  font-weight: 600;
+}
+
+.progress-improvement__value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.progress-improvement__value--muted {
+  color: var(--text-secondary);
+}
+
+.progress-direction {
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.progress-direction--improved {
+  background: rgba(94, 219, 155, 0.12);
+  color: #7ee2b0;
+  border: 1px solid rgba(94, 219, 155, 0.4);
+}
+
+.progress-direction--declined {
+  background: rgba(239, 48, 56, 0.12);
+  color: #ff8b8f;
+  border: 1px solid rgba(239, 48, 56, 0.45);
+}
+
+.progress-direction--stable {
+  background: rgba(255, 176, 82, 0.12);
+  color: #ffc069;
+  border: 1px solid rgba(255, 176, 82, 0.4);
+}
+
+/* ---------- Адаптивность ---------- */
+
+@media (max-width: 768px) {
+  .progress-section {
+    padding: 18px 16px;
+  }
+
+  .progress-select__label {
+    flex-wrap: wrap;
+  }
+
+  .progress-select__open {
+    order: 3;
+    width: 100%;
+  }
+
+  .progress-filter__select,
+  .progress-filter__input {
+    width: 100%;
+  }
+
+  .progress-filter__field,
+  .progress-metric-picker {
+    flex: 1 1 100%;
+  }
+
+  .progress-improvement {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}
